@@ -72,7 +72,7 @@ export const editPage = async (req, res) => {
 export const getPagesAndFunnels = async (req, res) => {
     try {
         const design = await Design.findOne();
-        const pages = design.pages.filter(page => page.slug !== '').filter(page => page.slug !== 'contacto');
+        const pages = design.pages.filter(page => page.slug !== '').filter(page => page.slug !== 'contacto').filter(page => page.slug !== 'tienda');
         const funnels = await Funnel.find();
         const services = await Service.find()
 
@@ -130,6 +130,17 @@ export const createDefaultPages = async (req, res) => {
               ]
             },
             {
+              page: 'Tienda',
+              slug: '',
+              header: false,
+              metaTitle: 'tienda',
+              design: [
+                { content: 'Bloque 3', info: { title: 'Tienda' } },
+                { content: 'Categorias 2', info: { products: '' } },
+                { content: 'Productos' }
+              ]
+            },
+            {
               page: 'Contacto',
               slug: 'contacto',
               header: true,
@@ -139,7 +150,13 @@ export const createDefaultPages = async (req, res) => {
                 { content: 'Suscripción', info: { title: 'Suscribete a nuestra lista' } }
               ]
             }
-          ] })
+          ],
+          footer: { bgColor: '#111111', textColor: '#ffffff' },
+          cartPage: { bgColor: '#ffffff', textColor: '#111111', detailsColor: '#ffffff' },
+          checkoutPage: { bgColor: '#ffffff', textColor: '#111111', detailsColor: '#ffffff' },
+          pageProduct: [{ reviews: true, design: [{ content: 'Carrusel productos' }, { content: 'Suscripción' }] }],
+          pageCategory: [{ design: [{ content: 'Bloque 6' }, { content: 'Categorias 2' }, { content: 'Productos' }, { content: 'Suscripción' }] }]
+        })
         const newDesignSave = await newDesign.save()
         const newTag = new ClientTag({ tag: 'suscriptores' })
         await newTag.save()
@@ -157,7 +174,7 @@ export const createDefaultPages = async (req, res) => {
         await newDataEmail.save()
         const newDataPhone = new ClientData({ name: 'Teléfono', data: 'phone' })
         await newDataPhone.save()
-        const newStyle = new Style({ design: 'Borde', form: 'Cuadradas', primary: '#0071e3', button: '#ffffff' })
+        const newStyle = new Style({ design: 'Borde', form: 'Cuadradas', primary: '#2167e5', button: '#ffffff' })
         await newStyle.save()
         return res.json(newDesignSave)
     } catch (error) {

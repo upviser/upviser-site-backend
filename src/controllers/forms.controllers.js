@@ -36,3 +36,12 @@ export const editForm = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const deteleFotm = async (req, res) => {
+    try {
+        const formDelete = await Form.findByIdAndDelete(req.params.id)
+        return res.send(formDelete)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}

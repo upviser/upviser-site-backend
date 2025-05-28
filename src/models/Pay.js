@@ -14,8 +14,6 @@ const PaySchema = new mongoose.Schema({
     plan: { type: String },
     price: { type: Number },
     state: { type: String },
-    funnel: { type: String },
-    step: { type: String },
     method: { type: String }
 }, {
     timestamps: true

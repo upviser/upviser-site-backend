@@ -2,6 +2,10 @@ import Pay from '../models/Pay.js'
 import Client from '../models/Client.js'
 import bizSdk from 'facebook-nodejs-business-sdk'
 import Integrations from '../models/Integrations.js'
+import { sendEmailBuyBrevo } from '../utils/sendEmailBuyBrevo.js'
+import StoreData from '../models/StoreData.js'
+import Style from '../models/Style.js'
+import Service from '../models/Service.js'
 
 export const createPay = async (req, res) => {
     try {
@@ -98,6 +102,12 @@ export const getPayEmailService = async (req, res) => {
 export const updatePay = async (req, res) => {
     try {
         const payUpdate = await Pay.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        if (req.body.state === 'Pago realizado') {
+            const storeData = await StoreData.findOne().lean()
+            const style = await Style.findOne().lean()
+            const services = await Service.find().lean()
+            sendEmailBuyBrevo({ pay: req.body.pay, storeData: storeData, style: style, services: services })
+        }
         return res.json(payUpdate)
     } catch (error) {
         return res.status(500).json({message: error.message})

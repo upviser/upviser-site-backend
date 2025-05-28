@@ -7,6 +7,8 @@ import cron from 'node-cron'
 import ClientData from '../models/ClientData.js'
 import Task from '../models/Task.js'
 import Style from '../models/Style.js'
+import Account from '../models/Account.js'
+import bcrypt from 'bcryptjs'
 
 export const createClient = async (req, res) => {
   try {
@@ -285,6 +287,60 @@ export const deleteClient = async (req, res) => {
   try {
     await Client.findByIdAndDelete(req.params.id)
     return res.sendStatus(204)
+  } catch (error) {
+    return res.status(500).json({message: error.message})
+  }
+}
+
+export const emailProduct = async (req, res) => {
+  try {
+    const client = await Client.findOne({ email: req.params.email }).lean()
+    if (client) {
+      const productsClient = [...client.products]
+      productsClient.push(req.body.product)
+      const updateClient = await Client.findByIdAndUpdate(client._id, { products: productsClient }, { new: true })
+      return res.json(updateClient)
+    } else {
+      const newClient = new Client({ email: req.params.email, products: [{ product: req.body.product }] })
+      return res.json(newClient)
+    }
+  } catch (error) {
+    return res.status(500).json({message: error.message})
+  }
+}
+
+export const createAccount = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body
+    const emailLower = email.toLowerCase()
+    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!regex.test(emailLower)) return res.send({ message: 'El email no es valido' })
+    if (password.length < 6) return res.send({ message: 'La contraseña tiene que tener minimo 6 caracteres' })
+    const user = await Account.findOne({ email: emailLower })
+    if (user) return res.send({ message: 'El email ya esta registrado' })
+    const hashedPassword = await bcrypt.hash(password, 12)
+    const newAccount = new Account({ firstName, lastName, email: emailLower, password: hashedPassword })
+    const accountSave = await newAccount.save()
+    return res.send({ firstName: accountSave.firstName, lastName: accountSave.lastName, email: accountSave.email, _id: accountSave._id })
+  } catch (error) {
+    return res.status(500).json({message: error.message})
+  }
+}
+
+export const getAccountData = async (req, res) => {
+  try {
+    const accountData = await Account.findById(req.params.id).lean()
+    if (!accountData) return res.sendStatus(404)
+    return res.send(accountData)
+  } catch (error) {
+    return res.status(500).json({message: error.message})
+  }
+}
+
+export const editAccountData = async (req, res) => {
+  try {
+    const editAccountData = await Account.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    return res.send(editAccountData)
   } catch (error) {
     return res.status(500).json({message: error.message})
   }

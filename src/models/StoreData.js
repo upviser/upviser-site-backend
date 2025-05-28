@@ -11,11 +11,13 @@ const StoreDataSchema = mongoose.Schema({
   facebook: { type: String },
   tiktok: { type: String },
   whatsapp: { type: String },
-  mapsLink: { type: String },
-  address: { type: String },
-  departament: { type: String },
-  city: { type: String },
-  region: { type: String },
+  locations: [{
+    address: { type: String },
+    details: { type: String },
+    city: { type: String },
+    region: { type: String },
+    mapsLink: { type: String }
+  }],
   schedule: {
     monday: { state: { type: Boolean, required: true }, open: { type: String }, close: { type: String } },
     tuesday: { state: { type: Boolean, required: true }, open: { type: String }, close: { type: String } },

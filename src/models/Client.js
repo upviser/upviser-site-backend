@@ -55,7 +55,8 @@ const ClientSchema = new mongoose.Schema({
   address: { type: String },
   details: { type: String },
   city: { type: String },
-  region: { type: String }
+  region: { type: String },
+  products: [{ product: { type: String } }]
 }, {
   timestamps: true
 })

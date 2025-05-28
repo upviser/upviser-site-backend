@@ -14,7 +14,11 @@ const CallSchema = new mongoose.Schema({
     action: { type: String },
     message: { type: String },
     redirect: { type: String },
-    calendar: { type: String }
+    calendar: { type: String },
+    address: { type: String },
+    details: { type: String },
+    city: { type: String },
+    region: { type: String }
 }, {
     timestamps: true
 })

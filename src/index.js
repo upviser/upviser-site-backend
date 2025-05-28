@@ -41,6 +41,21 @@ import brevoWebhookRoutes from './routes/brevoWebhook.routes.js'
 import integrationsRoutes from './routes/integrations.routes.js'
 import transbankRoutes from './routes/transbank.routes.js'
 import trackingRoutes from './routes/tracking.routes.js'
+import productsRoutes from './routes/products.routes.js'
+import addCartRoutes from './routes/addCart.routes.js'
+import categoriesRoutes from './routes/categories.routes.js'
+import promotionalCodeRoutes from './routes/promotionalCode.routes.js'
+import tagsRoutes from './routes/tags.routes.js'
+import viewContentRoutes from './routes/viewContent.routes.js'
+import informationRoutes from './routes/information.routes.js'
+import mercadopago2Routes from './routes/mercadoPago2.js'
+import chilexpressRoutes from './routes/chilexpress.controllers.js'
+import sellsRoutes from './routes/sells.routes.js'
+import aiRoutes from './routes/ai.routes.js'
+import instagramRoutes from './routes/instagram.routes.js'
+import messengerRoutes from './routes/messenger.routes.js'
+import whatsappRoutes from './routes/whatsapp.routes.js'
+import webhookRoutes from './routes/webhook.routes.js'
 
 connectDB()
 
@@ -106,6 +121,21 @@ app.use(brevoWebhookRoutes)
 app.use(integrationsRoutes)
 app.use(transbankRoutes)
 app.use(trackingRoutes)
+app.use(productsRoutes)
+app.use(addCartRoutes)
+app.use(categoriesRoutes)
+app.use(promotionalCodeRoutes)
+app.use(tagsRoutes)
+app.use(viewContentRoutes)
+app.use(informationRoutes)
+app.use(mercadopago2Routes)
+app.use(chilexpressRoutes)
+app.use(sellsRoutes)
+app.use(aiRoutes)
+app.use(instagramRoutes)
+app.use(messengerRoutes)
+app.use(whatsappRoutes)
+app.use(webhookRoutes)
 
 io.on('connection', async (socket) => {
     socket.on('message', async (message) => {

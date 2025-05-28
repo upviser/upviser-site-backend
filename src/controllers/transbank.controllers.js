@@ -3,6 +3,9 @@ import {asyncHandler} from '../utils/async_handler.js'
 const { WebpayPlus, Environment, Options } = pkg
 import StoreData from '../models/StoreData.js'
 import Pay from '../models/Pay.js'
+import Payment from '../models/Payment.js'
+import { sendEmailBuy } from '../utils/sendEmailBuy.js'
+import { sendEmail } from '../utils/sendEmail.js'
 
 export const create = asyncHandler(async function (req, res) {
   const { amount, returnUrl } = req.body
@@ -10,7 +13,8 @@ export const create = asyncHandler(async function (req, res) {
   const storeData = await StoreData.findOne().lean()
   const buyOrder = `${storeData.name !== '' ? storeData.name : 'WEB'}-${pay + 1001}`
   const sessionId = `P-${1001 + Number(pay)}`
-  const createResponse = await (new WebpayPlus.Transaction(new Options(597055555532, '579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C', Environment.Integration))).create(
+  const payment = await Payment.findOne().lean()
+  const createResponse = await (new WebpayPlus.Transaction(new Options(payment.transbank.commerceCode, payment.transbank.apiKey, Environment.Integration))).create(
     buyOrder,
     sessionId,
     amount,
