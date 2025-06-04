@@ -48,7 +48,7 @@ export const createInformation = async (req, res) => {
                 .setContentIds(ids)
             const serverEvent = (new ServerEvent())
                 .setEventId(newInformation._id.toString())
-                .setEventName('AddPaymentInfo')
+                .setEventName('InitiateCheckout')
                 .setEventTime(current_timestamp)
                 .setUserData(userData)
                 .setCustomData(customData)

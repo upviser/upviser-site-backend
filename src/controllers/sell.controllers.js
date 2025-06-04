@@ -11,48 +11,93 @@ export const createSell = async (req, res) => {
         const {email, region, city, firstName, lastName, address, departament, phone, coupon, cart, shipping, state, pay, total, fbp, fbc, shippingMethod, shippingState, subscription} = req.body
         const integrations = await Integrations.findOne().lean()
         if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
-            const phoneFormat = `56${phone}`
-            const CustomData = bizSdk.CustomData
-            const EventRequest = bizSdk.EventRequest
-            const UserData = bizSdk.UserData
-            const ServerEvent = bizSdk.ServerEvent
-            const access_token = integrations.apiToken
-            const pixel_id = integrations.apiPixelId
-            const api = bizSdk.FacebookAdsApi.init(access_token)
-            let current_timestamp = new Date()
-            const url = `${process.env.WEB_URL}/finalizar-compra/`
-            const userData = (new UserData())
-                .setFirstName(firstName.toLowerCase())
-                .setLastName(lastName.toLowerCase())
-                .setEmail(email.toLowerCase())
-                .setPhone(phoneFormat)
-                .setCity(city.toLowerCase())
-                .setCountry('cl')
-                .setClientIpAddress(req.connection.remoteAddress)
-                .setClientUserAgent(req.headers['user-agent'])
-                .setFbp(fbp)
-                .setFbc(fbc)
-            const customData = (new CustomData())
-                .setCurrency('clp')
-                .setValue(total)
-            const serverEvent = (new ServerEvent())
-                .setEventName('InitiateCheckout')
-                .setEventTime(current_timestamp)
-                .setUserData(userData)
-                .setCustomData(customData)
-                .setEventSourceUrl(url)
-                .setActionSource('website')
-            const eventsData = [serverEvent]
-            const eventRequest = (new EventRequest(access_token, pixel_id))
-                .setEvents(eventsData)
-                eventRequest.execute().then(
-                    response => {
-                        console.log('Response: ', response)
-                    },
-                    err => {
-                        console.error('Error: ', err)
-                    }
-                )
+            if (state === 'Pago realizado') {
+                const phoneFormat = `56${phone}`
+                const CustomData = bizSdk.CustomData
+                const EventRequest = bizSdk.EventRequest
+                const UserData = bizSdk.UserData
+                const ServerEvent = bizSdk.ServerEvent
+                const access_token = integrations.apiToken
+                const pixel_id = integrations.apiPixelId
+                const api = bizSdk.FacebookAdsApi.init(access_token)
+                let current_timestamp = new Date()
+                const url = `${process.env.WEB_URL}/finalizar-compra/`
+                const userData = (new UserData())
+                    .setFirstName(firstName.toLowerCase())
+                    .setLastName(lastName.toLowerCase())
+                    .setEmail(email.toLowerCase())
+                    .setPhone(phoneFormat)
+                    .setCity(city.toLowerCase())
+                    .setCountry('cl')
+                    .setClientIpAddress(req.connection.remoteAddress)
+                    .setClientUserAgent(req.headers['user-agent'])
+                    .setFbp(fbp)
+                    .setFbc(fbc)
+                const customData = (new CustomData())
+                    .setCurrency('clp')
+                    .setValue(total)
+                const serverEvent = (new ServerEvent())
+                    .setEventName('Purchase')
+                    .setEventTime(current_timestamp)
+                    .setUserData(userData)
+                    .setCustomData(customData)
+                    .setEventSourceUrl(url)
+                    .setActionSource('website')
+                const eventsData = [serverEvent]
+                const eventRequest = (new EventRequest(access_token, pixel_id))
+                    .setEvents(eventsData)
+                    eventRequest.execute().then(
+                        response => {
+                            console.log('Response: ', response)
+                        },
+                        err => {
+                            console.error('Error: ', err)
+                        }
+                    )
+            } else if (state === 'Pedido realizado') {
+                const phoneFormat = `56${phone}`
+                const CustomData = bizSdk.CustomData
+                const EventRequest = bizSdk.EventRequest
+                const UserData = bizSdk.UserData
+                const ServerEvent = bizSdk.ServerEvent
+                const access_token = integrations.apiToken
+                const pixel_id = integrations.apiPixelId
+                const api = bizSdk.FacebookAdsApi.init(access_token)
+                let current_timestamp = new Date()
+                const url = `${process.env.WEB_URL}/finalizar-compra/`
+                const userData = (new UserData())
+                    .setFirstName(firstName.toLowerCase())
+                    .setLastName(lastName.toLowerCase())
+                    .setEmail(email.toLowerCase())
+                    .setPhone(phoneFormat)
+                    .setCity(city.toLowerCase())
+                    .setCountry('cl')
+                    .setClientIpAddress(req.connection.remoteAddress)
+                    .setClientUserAgent(req.headers['user-agent'])
+                    .setFbp(fbp)
+                    .setFbc(fbc)
+                const customData = (new CustomData())
+                    .setCurrency('clp')
+                    .setValue(total)
+                const serverEvent = (new ServerEvent())
+                    .setEventName('AddPaymentInfo')
+                    .setEventTime(current_timestamp)
+                    .setUserData(userData)
+                    .setCustomData(customData)
+                    .setEventSourceUrl(url)
+                    .setActionSource('website')
+                const eventsData = [serverEvent]
+                const eventRequest = (new EventRequest(access_token, pixel_id))
+                    .setEvents(eventsData)
+                    eventRequest.execute().then(
+                        response => {
+                            console.log('Response: ', response)
+                        },
+                        err => {
+                            console.error('Error: ', err)
+                        }
+                    )
+            }
         }
         const cuponUpper = coupon?.toUpperCase()
         const sells = await Sell.countDocuments()
