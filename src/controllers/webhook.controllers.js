@@ -449,7 +449,7 @@ export const getMessage = async (req, res) => {
                         }).filter(Boolean);
                         await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
                         if (act.output_parsed.ready) {
-                            await axios.post(`https://graph.facebook.com/v16.0/106714702292810/messages?access_token=${integration.messengerToken}`, {
+                            await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                 "recipient": {
                                     "id": sender
                                 },
@@ -481,7 +481,7 @@ export const getMessage = async (req, res) => {
                                 presence_penalty: 0,
                                 store: false
                             });
-                            await axios.post(`https://graph.facebook.com/v16.0/106714702292810/messages?access_token=${integration.messengerToken}`, {
+                            await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                 "recipient": {
                                     "id": sender
                                 },
@@ -515,7 +515,7 @@ export const getMessage = async (req, res) => {
                             presence_penalty: 0,
                             store: false
                         });
-                        await axios.post(`https://graph.facebook.com/v16.0/106714702292810/messages?access_token=${integration.messengerToken}`, {
+                        await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
                             },
@@ -532,7 +532,7 @@ export const getMessage = async (req, res) => {
                         await newMessage.save()
                         return res.send(newMessage)
                     } else {
-                        await axios.post(`https://graph.facebook.com/v16.0/106714702292810/messages?access_token=${integration.messengerToken}`, {
+                        await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
                             },
