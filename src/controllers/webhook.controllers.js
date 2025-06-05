@@ -326,7 +326,7 @@ export const getMessage = async (req, res) => {
                         text: {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
-                    });
+                    }).catch((error) => console.log(error))
                     console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
