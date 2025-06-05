@@ -330,7 +330,7 @@ export const getMessage = async (req, res) => {
                     console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
-                        await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                        await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
                             },
@@ -456,7 +456,7 @@ export const getMessage = async (req, res) => {
                         }).filter(Boolean);
                         await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
                         if (act.output_parsed.ready) {
-                            await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                            await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                 "recipient": {
                                     "id": sender
                                 },
@@ -488,7 +488,7 @@ export const getMessage = async (req, res) => {
                                 presence_penalty: 0,
                                 store: false
                             });
-                            await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                            await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                 "recipient": {
                                     "id": sender
                                 },
@@ -524,7 +524,7 @@ export const getMessage = async (req, res) => {
                             store: false
                         });
                         console.log(response.choices[0].message.content)
-                        await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                        await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
                             },
@@ -541,7 +541,7 @@ export const getMessage = async (req, res) => {
                         await newMessage.save()
                         return res.send(newMessage)
                     } else {
-                        await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                        await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
                             },
