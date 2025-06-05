@@ -24,7 +24,6 @@ export const createWebhook = async (req, res) => {
 
 export const getMessage = async (req, res) => {
     try {
-        console.log(req.body?.entry[0].messaging)
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {  
             const message = req.body.entry[0].changes[0].value.messages[0].text.body
@@ -285,7 +284,7 @@ export const getMessage = async (req, res) => {
             } else {
                 return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
             }
-        } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text && req.body.entry[0].id === '106714702292810') {
+        } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
             const message = req.body.entry[0].messaging[0].message.text
             const sender = req.body.entry[0].messaging[0].sender.id
             const integration = await Integration.findOne().lean()
@@ -554,7 +553,7 @@ export const getMessage = async (req, res) => {
             } else {
                 return res.json({ message: 'Error: No existe el token de la app para Messenger' })
             }
-        } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text && req.body.entry[0].id === '17841457418025747') {
+        } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
             const message = req.body.entry[0].messaging[0].message.text
             const sender = req.body.entry[0].messaging[0].sender.id
             const integration = await Integration.findOne().lean()
