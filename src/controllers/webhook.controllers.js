@@ -12,6 +12,8 @@ import Funnel from '../models/Funnel.js'
 import Service from '../models/Service.js'
 import Cart from '../models/Cart.js'
 import Integration from '../models/Integrations.js'
+import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
 
 export const createWebhook = async (req, res) => {
     const storeData = await StoreData.findOne().lean()
