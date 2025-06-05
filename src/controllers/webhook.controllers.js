@@ -308,11 +308,13 @@ export const getMessage = async (req, res) => {
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": [{"type": "text", "text": ult.response}]}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
+                    console.log(context)
                     const conversation = messages.reverse().flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": ult.message}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": ult.response}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
+                    console.log(conversation)
                     const TypeSchema = z.object({
                         intentions: z.array(z.string())
                     })
