@@ -290,7 +290,9 @@ export const getMessage = async (req, res) => {
             const sender = req.body.entry[0].messaging[0].sender.id
             console.log(sender)
             const integration = await Integration.findOne().lean()
+            console.log(integration)
             if (integration.messengerToken) {
+                console.log('si messenger token')
                 const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
                 if (messages && messages.length && messages[0].agent) {
                     const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
@@ -298,6 +300,7 @@ export const getMessage = async (req, res) => {
                     io.emit('whatsapp', newMessage)
                     return res.sendStatus(200)
                 } else {
+                    console.log('no hay mensajes anteriores')
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     let products
                     const context = messages.reverse().flatMap(ult => {
@@ -324,6 +327,7 @@ export const getMessage = async (req, res) => {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
                     });
+                    console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                         await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
@@ -372,6 +376,7 @@ export const getMessage = async (req, res) => {
                         information = `${information}. ${JSON.stringify(politics[0].shipping)}`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
+                        console.log('agregada informacion de saludo')
                         const storeData = await StoreData.find().lean()
                         information = `${information}. ${JSON.stringify(storeData[0])}`
                     }
@@ -502,6 +507,7 @@ export const getMessage = async (req, res) => {
                         }
                     }
                     if (information !== '') {
+                        console.log('parte para generar respuesta')
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
@@ -517,6 +523,7 @@ export const getMessage = async (req, res) => {
                             presence_penalty: 0,
                             store: false
                         });
+                        console.log(response.choices[0].message.content)
                         await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
