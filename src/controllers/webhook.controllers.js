@@ -324,7 +324,7 @@ export const getMessage = async (req, res) => {
                     });
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
-                        await axios.post(`https://graph.facebook.com/v16.0/106714702292810/messages?access_token=${integration.messengerToken}`, {
+                        await axios.post(`https://graph.facebook.com/v16.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
                             },

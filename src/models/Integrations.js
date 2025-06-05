@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 
 const IntegrationsSchema = new mongoose.Schema({
     whatsappToken: { type: String },
+    idPage: { type: String },
     messengerToken: { type: String },
     apiToken: { type: String },
     apiPixelId: { type: String },
