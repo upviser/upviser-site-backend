@@ -13,17 +13,17 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
 
     let service
 
-    if (pay.email) {
+    if (pay?.email) {
         service = services.find(service => service._id === pay.service)
     }
 
     let sendSmtpEmail = new brevo.SendSmtpEmail()
     sendSmtpEmail = {
         sender: { email: process.env.BREVO_EMAIL, name: process.env.BREVO_NAME },
-        subject: `¡Hola ${sell.firstName ? sell.firstName : pay.firstName}! Tu compra ha sido realizada con exito`,
+        subject: `¡Hola ${sell?.firstName ? sell.firstName : pay.firstName}! Tu compra ha sido realizada con exito`,
         to: [{
-            email: sell.email ? sell.email : pay.email,
-            name: sell.firstName ? sell.firstName : pay.firstName
+            email: sell?.email ? sell.email : pay.email,
+            name: sell?.firstName ? sell.firstName : pay.firstName
         }],
         htmlContent: `
             <div lang="und" style="width:100%;padding:0;Margin:0;background-color:#ffffff;font-family:roboto,'helvetica neue',helvetica,arial,sans-serif;">
@@ -58,7 +58,7 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
                                                     </td>
                                                 </tr>
                                                 ${
-                                                    sell.email
+                                                    sell?.email
                                                         ? `
                                                             <div style="color: #2D2D2D;">
                                                                 ${sell.cart.map(product => {
@@ -80,12 +80,12 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
                                                         : `
                                                             <tr>
                                                                 <td align="center" style="padding: 20px;">
-                                                                    <p style="margin: 0; padding-bottom: 10px; line-height: 25px; color: #333333; font-size: 16px;">Servicio: ${service.name}</p>
+                                                                    <p style="margin: 0; padding-bottom: 10px; line-height: 25px; color: #333333; font-size: 16px;">Servicio: ${service?.name}</p>
                                                                     <br>
                                                                     ${
-                                                                        pay.plan && pay.plan !== ''
+                                                                        pay?.plan && pay.plan !== ''
                                                                             ? `
-                                                                                <p style="margin: 0; padding-bottom: 10px; line-height: 25px; color: #333333; font-size: 16px;">Plan: ${service.plans.plans.find(plan => plan._id === pay.plan)}</p>
+                                                                                <p style="margin: 0; padding-bottom: 10px; line-height: 25px; color: #333333; font-size: 16px;">Plan: ${service?.plans?.plans?.find(plan => plan._id === pay.plan).name}</p>
                                                                                 <br>
                                                                             `
                                                                             : ''
@@ -101,13 +101,13 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
                                                     <td align="center" style="padding: 20px;">
                                                         <p style="margin: 0; padding-bottom: 10px; line-height: 25px; color: #333333; font-size: 16px;">Para cualquier consulta comunicate con nostros a través de nuestro Whatsapp.</p>
                                                         <br>
-                                                        <a href="https://api.whatsapp.com/send?phone=56${storeData.phone}" style="padding: 10px 30px; background-color: ${style?.primary}; border: none; color: ${style?.button}; border-radius: ${style?.form !== 'Cuadradas' ? `${style?.borderButton}px` : '0px'}; font-size: 15px; text-decoration: none;">Hablar por Whatsapp</a>
+                                                        <a href="https://api.whatsapp.com/send?phone=56${storeData?.phone}" style="padding: 10px 30px; background-color: ${style?.primary}; border: none; color: ${style?.button}; border-radius: ${style?.form !== 'Cuadradas' ? `${style?.borderButton}px` : '0px'}; font-size: 15px; text-decoration: none;">Hablar por Whatsapp</a>
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td align="center" style="padding-bottom: 20px; padding-top: 10px;">
-                                                        <p style="margin: 0; padding-bottom: 10px; font-size: 12px; color: #444444;padding-bottom: 10px;">Enviado a: ${subscriber.email}</p>
-                                                        <a href="${process.env.API_URL}/desubcribe/${subscriber.email}" style="margin: 0; padding-bottom: 10px; font-size: 12px; color: #444444;">Desuscribirte</a>
+                                                        <p style="margin: 0; padding-bottom: 10px; font-size: 12px; color: #444444;padding-bottom: 10px;">Enviado a: ${sell?.email ? sell.email : pay.email}</p>
+                                                        <a href="${process.env.API_URL}/desubcribe/${sell?.email ? sell.email : pay?.email}" style="margin: 0; padding-bottom: 10px; font-size: 12px; color: #444444;">Desuscribirte</a>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -122,9 +122,9 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
         `,
         tags: [id]
     };
-    await updateClientEmailStatus(subscriber.email, {
+    await updateClientEmailStatus(sell?.email ? sell.email : pay?.email, {
         id: id,
-        subject: `¡Hola ${sell.firstName ? sell.firstName : pay.firstName}! Tu compra ha sido realizada con exito`,
+        subject: `¡Hola ${sell?.firstName ? sell.firstName : pay?.firstName}! Tu compra ha sido realizada con exito`,
         opened: false,
         clicked: false
     });

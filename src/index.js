@@ -56,6 +56,7 @@ import instagramRoutes from './routes/instagram.routes.js'
 import messengerRoutes from './routes/messenger.routes.js'
 import whatsappRoutes from './routes/whatsapp.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
+import notificationRoutes from './routes/notifications.routes.js'
 
 connectDB()
 
@@ -136,6 +137,7 @@ app.use(instagramRoutes)
 app.use(messengerRoutes)
 app.use(whatsappRoutes)
 app.use(webhookRoutes)
+app.use(notificationRoutes)
 
 io.on('connection', async (socket) => {
     socket.on('message', async (message) => {

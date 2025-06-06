@@ -215,7 +215,7 @@ export const updatePay = async (req, res) => {
             const storeData = await StoreData.findOne().lean()
             const style = await Style.findOne().lean()
             const services = await Service.find().lean()
-            sendEmailBuyBrevo({ pay: req.body.pay, storeData: storeData, style: style, services: services })
+            sendEmailBuyBrevo({ pay: payUpdate, storeData: storeData, style: style, services: services })
         }
         return res.json(payUpdate)
     } catch (error) {
