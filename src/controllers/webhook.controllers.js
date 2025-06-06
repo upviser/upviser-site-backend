@@ -58,7 +58,7 @@ export const getMessage = async (req, res) => {
                     const type = await openai.responses.parse({
                         model: "gpt-4o-mini",
                         input: [
-                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra, necesidad de alguien de soporte. Nota: *Solo incluye 'intención de compra' si el usuario expresa deseo de adquirir o añadir al carrito; en ese caso, también incluye 'productos'. *Si la intecion es servicios tambien incluir agendamientos."},
+                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. Nota: *Solo incluye 'intención de compra' si el usuario expresa deseo de adquirir o añadir al carrito; en ese caso, también incluye 'productos'. *Si la intecion es servicios tambien incluir agendamientos."},
                             ...conversation,
                             {"role": "user", "content": message}
                         ],
