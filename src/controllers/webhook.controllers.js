@@ -29,12 +29,9 @@ export const getMessage = async (req, res) => {
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {  
             const message = req.body.entry[0].changes[0].value.messages[0].text.body
-            console.log(message)
             const number = req.body.entry[0].changes[0].value.messages[0].from
-            console.log(number)
             const integration = await Integration.findOne().lean()
             if (integration.whatsappToken && integration.whatsappToken !== '') {
-                console.log('whatasapp token')
                 const messages = await WhatsappMessage.find({phone: number}).select('-phone -_id').sort({ createdAt: -1 }).limit(2).lean()
                 if (messages && messages.length && messages[0].agent) {
                     const newMessage = new WhatsappMessage({phone: number, message: message, agent: true, view: false})
@@ -42,7 +39,6 @@ export const getMessage = async (req, res) => {
                     io.emit('whatsapp', newMessage)
                     return res.sendStatus(200)
                 } else {
-                    console.log('no hay mensajes anteriores')
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     let products
                     const context = messages.reverse().flatMap(ult => {
@@ -116,7 +112,6 @@ export const getMessage = async (req, res) => {
                         information = `${information}. ${JSON.stringify(politics[0].shipping)}`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
-                        console.log('informacion de saludo agregada')
                         const storeData = await StoreData.find().lean()
                         information = `${information}. ${JSON.stringify(storeData[0])}`
                     }
@@ -243,7 +238,7 @@ export const getMessage = async (req, res) => {
                         }
                     }
                     if (information !== '') {
-                        console.log('generacion de respuesta')
+                        console.log(information)
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
@@ -259,7 +254,6 @@ export const getMessage = async (req, res) => {
                             presence_penalty: 0,
                             store: false
                         });
-                        console.log(response.choices[0].message.content)
                         await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                             "messaging_product": "whatsapp",
                             "to": number,
@@ -332,6 +326,7 @@ export const getMessage = async (req, res) => {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
                     })
+                    console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                         await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
@@ -510,6 +505,7 @@ export const getMessage = async (req, res) => {
                         }
                     }
                     if (information !== '') {
+                        console.log(information)
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
@@ -601,6 +597,7 @@ export const getMessage = async (req, res) => {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
                     });
+                    console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                         await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
@@ -779,6 +776,7 @@ export const getMessage = async (req, res) => {
                         }
                     }
                     if (information !== '') {
+                        console.log(information)
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
