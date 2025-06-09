@@ -58,7 +58,7 @@ export const getMessage = async (req, res) => {
                     const type = await openai.responses.parse({
                         model: "gpt-4o-mini",
                         input: [
-                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. Nota: *Solo incluye 'intención de compra' si el usuario expresa deseo de adquirir o añadir al carrito; en ese caso, también incluye 'productos'. *Si la intecion es servicios tambien incluir agendamientos."},
+                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
                             ...conversation,
                             {"role": "user", "content": message}
                         ],
@@ -106,7 +106,7 @@ export const getMessage = async (req, res) => {
                                 category: product.category
                             }
                         })
-                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon <a href="/tienda/(slug de la categoria)/(slug del producto)">(nombre del producto)</a>"`
+                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon https://${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                         const politics = await Politics.find().lean()
@@ -126,15 +126,40 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const services = await Service.find().lean();
-                        const serviceIds = services.map(service => service._id);
+                        const cleanedServices = services.map(service => {
+                        const cleanedSteps = (service.steps || []).filter(step => step.design?.length > 0)
+                            .map(({ _id, createdAt, updatedAt, ...rest }) => rest);
+                        const cleanedPlans = service.plans?.plans?.map(plan => ({
+                            ...plan,
+                            functionalities: (plan.functionalities || []).map(({ _id, ...func }) => func)
+                        })) || [];
+                        const { createdAt, updatedAt, _id, __v, ...restService } = service;
+                        return {
+                            ...restService,
+                            steps: cleanedSteps,
+                            plans: cleanedPlans
+                        };
+                        });
+                        const serviceIds = services.map(s => s._id);
                         const funnels = await Funnel.find({ service: { $in: serviceIds } }).lean();
-                        information = `${information}. ${JSON.stringify(services)}. En donde adicionalmente tienes la información de los embudos de ventas en donde en el dato service esta el _id del servicio relacionado. ${JSON.stringify(funnels)}`
+                        const cleanedFunnels = funnels.map(funnel => {
+                        const cleanedSteps = (funnel.steps || []).filter(step => step.design?.length > 0)
+                            .map(({ metaTitle, metaDescription, _id, createdAt, updatedAt, ...rest }) => rest);
+                        const { _id, createdAt, updatedAt, __v, ...restFunnel } = funnel;
+                        return {
+                            ...restFunnel,
+                            steps: cleanedSteps
+                        };
+                        });
+                        const calls = await Call.find({ service: { $in: serviceIds } }).lean();
+                        const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
+                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon https://${process.env.WEB_URL}/(slug de la página)`;
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon <a href="/llamadas/Llamada%20de%20orientación">Llamada de orientación</a> en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon https://${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('compra')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
                         const CartSchema = z.object({
                             cart: z.array(z.object({
@@ -319,7 +344,7 @@ export const getMessage = async (req, res) => {
                     const type = await openai.responses.parse({
                         model: "gpt-4o-mini",
                         input: [
-                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra, necesidad de alguien de soporte. Nota: *Solo incluye 'intención de compra' si el usuario expresa deseo de adquirir o añadir al carrito; en ese caso, también incluye 'productos'. *Si la intecion es servicios tambien incluir agendamientos."},
+                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
                             ...conversation,
                             {"role": "user", "content": message}
                         ],
@@ -369,7 +394,7 @@ export const getMessage = async (req, res) => {
                                 category: product.category
                             }
                         })
-                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon <a href="/tienda/(slug de la categoria)/(slug del producto)">(nombre del producto)</a>"`
+                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon https://${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                         const politics = await Politics.find().lean()
@@ -389,15 +414,40 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const services = await Service.find().lean();
-                        const serviceIds = services.map(service => service._id);
+                        const cleanedServices = services.map(service => {
+                        const cleanedSteps = (service.steps || []).filter(step => step.design?.length > 0)
+                            .map(({ _id, createdAt, updatedAt, ...rest }) => rest);
+                        const cleanedPlans = service.plans?.plans?.map(plan => ({
+                            ...plan,
+                            functionalities: (plan.functionalities || []).map(({ _id, ...func }) => func)
+                        })) || [];
+                        const { createdAt, updatedAt, _id, __v, ...restService } = service;
+                        return {
+                            ...restService,
+                            steps: cleanedSteps,
+                            plans: cleanedPlans
+                        };
+                        });
+                        const serviceIds = services.map(s => s._id);
                         const funnels = await Funnel.find({ service: { $in: serviceIds } }).lean();
-                        information = `${information}. ${JSON.stringify(services)}. En donde adicionalmente tienes la información de los embudos de ventas en donde en el dato service esta el _id del servicio relacionado. ${JSON.stringify(funnels)}`
+                        const cleanedFunnels = funnels.map(funnel => {
+                        const cleanedSteps = (funnel.steps || []).filter(step => step.design?.length > 0)
+                            .map(({ metaTitle, metaDescription, _id, createdAt, updatedAt, ...rest }) => rest);
+                        const { _id, createdAt, updatedAt, __v, ...restFunnel } = funnel;
+                        return {
+                            ...restFunnel,
+                            steps: cleanedSteps
+                        };
+                        });
+                        const calls = await Call.find({ service: { $in: serviceIds } }).lean();
+                        const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
+                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon https://${process.env.WEB_URL}/(slug de la página)`;
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon <a href="/llamadas/Llamada%20de%20orientación">Llamada de orientación</a> en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon https://${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('compra')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
                         const CartSchema = z.object({
                             cart: z.array(z.object({
@@ -590,7 +640,7 @@ export const getMessage = async (req, res) => {
                     const type = await openai.responses.parse({
                         model: "gpt-4o-mini",
                         input: [
-                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra, necesidad de alguien de soporte. Nota: *Solo incluye 'intención de compra' si el usuario expresa deseo de adquirir o añadir al carrito; en ese caso, también incluye 'productos'. *Si la intecion es servicios tambien incluir agendamientos."},
+                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
                             ...conversation,
                             {"role": "user", "content": message}
                         ],
@@ -640,7 +690,7 @@ export const getMessage = async (req, res) => {
                                 category: product.category
                             }
                         })
-                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon <a href="/tienda/(slug de la categoria)/(slug del producto)">(nombre del producto)</a>"`
+                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon https://${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                         const politics = await Politics.find().lean()
@@ -660,15 +710,40 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const services = await Service.find().lean();
-                        const serviceIds = services.map(service => service._id);
+                        const cleanedServices = services.map(service => {
+                        const cleanedSteps = (service.steps || []).filter(step => step.design?.length > 0)
+                            .map(({ _id, createdAt, updatedAt, ...rest }) => rest);
+                        const cleanedPlans = service.plans?.plans?.map(plan => ({
+                            ...plan,
+                            functionalities: (plan.functionalities || []).map(({ _id, ...func }) => func)
+                        })) || [];
+                        const { createdAt, updatedAt, _id, __v, ...restService } = service;
+                        return {
+                            ...restService,
+                            steps: cleanedSteps,
+                            plans: cleanedPlans
+                        };
+                        });
+                        const serviceIds = services.map(s => s._id);
                         const funnels = await Funnel.find({ service: { $in: serviceIds } }).lean();
-                        information = `${information}. ${JSON.stringify(services)}. En donde adicionalmente tienes la información de los embudos de ventas en donde en el dato service esta el _id del servicio relacionado. ${JSON.stringify(funnels)}`
+                        const cleanedFunnels = funnels.map(funnel => {
+                        const cleanedSteps = (funnel.steps || []).filter(step => step.design?.length > 0)
+                            .map(({ metaTitle, metaDescription, _id, createdAt, updatedAt, ...rest }) => rest);
+                        const { _id, createdAt, updatedAt, __v, ...restFunnel } = funnel;
+                        return {
+                            ...restFunnel,
+                            steps: cleanedSteps
+                        };
+                        });
+                        const calls = await Call.find({ service: { $in: serviceIds } }).lean();
+                        const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
+                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon https://${process.env.WEB_URL}/(slug de la página)`;
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon <a href="/llamadas/Llamada%20de%20orientación">Llamada de orientación</a> en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon https://${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('compra')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
                         const CartSchema = z.object({
                             cart: z.array(z.object({
