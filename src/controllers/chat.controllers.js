@@ -3,7 +3,6 @@ import OpenAI from "openai"
 import Product from '../models/Product.js'
 import Service from '../models/Service.js'
 import StoreData from '../models/StoreData.js'
-import Payment from '../models/Payment.js'
 import Call from '../models/Call.js'
 import Funnel from '../models/Funnel.js'
 import Politics from '../models/Politics.js'
@@ -115,11 +114,9 @@ export const responseMessage = async (req, res) => {
                         steps: cleanedSteps
                     };
                     });
-                    const calls = await Call.find({ service: { $in: serviceIds } }).lean();
-                    const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
-                    information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon <a href="/(slug de la página)">(nombre de la página)</a>.`;
+                    information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon <a href="/(slug de la página)">(nombre de la página)</a>.`;
                 }
-                if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
+                if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                     const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
                     information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon <a href="/llamadas/Llamada%20de%20orientación">Llamada de orientación</a> en el caso que el nombre de la llamada sea "Llamada de orientación"`
                 }

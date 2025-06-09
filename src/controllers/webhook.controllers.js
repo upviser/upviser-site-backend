@@ -106,7 +106,7 @@ export const getMessage = async (req, res) => {
                                 category: product.category
                             }
                         })
-                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon https://${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
+                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                         const politics = await Politics.find().lean()
@@ -151,13 +151,11 @@ export const getMessage = async (req, res) => {
                             steps: cleanedSteps
                         };
                         });
-                        const calls = await Call.find({ service: { $in: serviceIds } }).lean();
-                        const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
-                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon https://${process.env.WEB_URL}/(slug de la página)`;
+                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon ${process.env.WEB_URL}/(slug de la página)`;
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon https://${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon ${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
@@ -394,7 +392,7 @@ export const getMessage = async (req, res) => {
                                 category: product.category
                             }
                         })
-                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon https://${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
+                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                         const politics = await Politics.find().lean()
@@ -439,13 +437,11 @@ export const getMessage = async (req, res) => {
                             steps: cleanedSteps
                         };
                         });
-                        const calls = await Call.find({ service: { $in: serviceIds } }).lean();
-                        const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
-                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon https://${process.env.WEB_URL}/(slug de la página)`;
+                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon ${process.env.WEB_URL}/(slug de la página)`;
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon https://${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon ${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
@@ -690,7 +686,7 @@ export const getMessage = async (req, res) => {
                                 category: product.category
                             }
                         })
-                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon https://${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
+                        information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto)`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                         const politics = await Politics.find().lean()
@@ -735,13 +731,11 @@ export const getMessage = async (req, res) => {
                             steps: cleanedSteps
                         };
                         });
-                        const calls = await Call.find({ service: { $in: serviceIds } }).lean();
-                        const cleanedCalls = calls.map(({ _id, intervals, labels, buttonText, tags, action, message, calendar, createdAt, updatedAt, __v, ...rest }) => rest);
-                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Llamadas (relacionadas con los servicios): ${JSON.stringify(cleanedCalls)}. Si hay alguna página que aporte información, pon https://${process.env.WEB_URL}/(slug de la página)`;
+                        information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon ${process.env.WEB_URL}/(slug de la página)`;
                     }
-                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') && !JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
+                    if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon https://${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon ${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
