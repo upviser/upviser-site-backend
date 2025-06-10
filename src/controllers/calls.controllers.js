@@ -30,7 +30,7 @@ export const getCall = async (req, res) => {
 
 export const getCallName = async (req, res) => {
     try {
-        const call = await Call.findOne({ nameMeeting: req.params.name.replaceAll('-', ' ') })
+        const call = await Call.findOne({ nameMeeting: req.params.name })
         return res.json(call)
     } catch (error) {
         return res.status(500).json({message: error.message})
