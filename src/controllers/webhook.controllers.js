@@ -318,7 +318,6 @@ export const getMessage = async (req, res) => {
             const integration = await Integration.findOne().lean()
             if (integration.messengerToken) {
                 const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
-                console.log(messages)
                 if (messages && messages.length && messages[0].agent) {
                     const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
                     await newMessage.save()
@@ -332,13 +331,11 @@ export const getMessage = async (req, res) => {
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": [{"type": "text", "text": ult.response}]}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
-                    const conversation = messages.reverse().flatMap(ult => {
+                    const conversation = messages.flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": ult.message}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": ult.response}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
-                    console.log(conversation)
-                    console.log(message)
                     const TypeSchema = z.object({
                         intentions: z.array(z.string())
                     })
@@ -353,7 +350,6 @@ export const getMessage = async (req, res) => {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
                     })
-                    console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                         await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
@@ -444,7 +440,7 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon ${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada mas adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
@@ -555,7 +551,6 @@ export const getMessage = async (req, res) => {
                         }
                     }
                     if (information !== '') {
-                        console.log(information)
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
@@ -571,7 +566,6 @@ export const getMessage = async (req, res) => {
                             presence_penalty: 0,
                             store: false
                         });
-                        console.log(response.choices[0].message.content)
                         await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
