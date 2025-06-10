@@ -318,6 +318,7 @@ export const getMessage = async (req, res) => {
             const integration = await Integration.findOne().lean()
             if (integration.messengerToken) {
                 const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
+                console.log(messages)
                 if (messages && messages.length && messages[0].agent) {
                     const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
                     await newMessage.save()
