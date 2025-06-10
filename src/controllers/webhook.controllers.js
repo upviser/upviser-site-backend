@@ -327,7 +327,8 @@ export const getMessage = async (req, res) => {
                 } else {
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     let products
-                    const context = messages.reverse().flatMap(ult => {
+                    const messagesReverse = messages.reverse()
+                    const context = messagesReverse.flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": [{"type": "text", "text": ult.message}]}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": [{"type": "text", "text": ult.response}]}] : [];
                         return [...userMessage, ...assistantMessage];
