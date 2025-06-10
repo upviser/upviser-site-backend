@@ -26,12 +26,11 @@ export const createWebhook = async (req, res) => {
 
 export const getMessage = async (req, res) => {
     try {
-        console.log(req.body)
+        const integration = await Integration.findOne().lean()
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {  
             const message = req.body.entry[0].changes[0].value.messages[0].text.body
             const number = req.body.entry[0].changes[0].value.messages[0].from
-            const integration = await Integration.findOne().lean()
             if (integration.whatsappToken && integration.whatsappToken !== '') {
                 const messages = await WhatsappMessage.find({phone: number}).select('-phone -_id').sort({ createdAt: -1 }).limit(2).lean()
                 if (messages && messages.length && messages[0].agent) {
@@ -42,12 +41,12 @@ export const getMessage = async (req, res) => {
                 } else {
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     let products
-                    const context = messages.reverse().flatMap(ult => {
+                    const context = messages.flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": [{"type": "text", "text": ult.message}]}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": [{"type": "text", "text": ult.response}]}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
-                    const conversation = messages.reverse().flatMap(ult => {
+                    const conversation = messages.flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": ult.message}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": ult.response}] : [];
                         return [...userMessage, ...assistantMessage];
@@ -58,7 +57,7 @@ export const getMessage = async (req, res) => {
                     const type = await openai.responses.parse({
                         model: "gpt-4o-mini",
                         input: [
-                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
+                            {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte."},
                             ...conversation,
                             {"role": "user", "content": message}
                         ],
@@ -66,7 +65,6 @@ export const getMessage = async (req, res) => {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
                     });
-                    console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                         await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
@@ -155,7 +153,7 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon ${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
@@ -262,7 +260,6 @@ export const getMessage = async (req, res) => {
                         }
                     }
                     if (information !== '') {
-                        console.log(information)
                         const response = await openai.chat.completions.create({
                             model: "gpt-4o-mini",
                             messages: [
@@ -312,10 +309,9 @@ export const getMessage = async (req, res) => {
             } else {
                 return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
             }
-        } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
+        } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text && req.body.entry[0].id === integration.idPage) {
             const message = req.body.entry[0].messaging[0].message.text
             const sender = req.body.entry[0].messaging[0].sender.id
-            const integration = await Integration.findOne().lean()
             if (integration.messengerToken) {
                 const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
                 if (messages && messages.length && messages[0].agent) {
@@ -440,7 +436,7 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada mas adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()
@@ -607,7 +603,6 @@ export const getMessage = async (req, res) => {
         } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
             const message = req.body.entry[0].messaging[0].message.text
             const sender = req.body.entry[0].messaging[0].sender.id
-            const integration = await Integration.findOne().lean()
             if (integration.messengerToken) {
                 const messages = await InstagramMessage.find({instagramId: sender}).select('-instagramId -_id').sort({ createdAt: -1 }).limit(2).lean()
                 if (messages && messages.length && messages[0].agent) {
@@ -618,12 +613,12 @@ export const getMessage = async (req, res) => {
                 } else {
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     let products
-                    const context = messages.reverse().flatMap(ult => {
+                    const context = messages.flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": [{"type": "text", "text": ult.message}]}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": [{"type": "text", "text": ult.response}]}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
-                    const conversation = messages.reverse().flatMap(ult => {
+                    const conversation = messages.flatMap(ult => {
                         const userMessage = ult.message ? [{"role": "user", "content": ult.message}] : [];
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": ult.response}] : [];
                         return [...userMessage, ...assistantMessage];
@@ -642,7 +637,6 @@ export const getMessage = async (req, res) => {
                             format: zodTextFormat(TypeSchema, "type"),
                         },
                     });
-                    console.log(type.output_parsed)
                     let information = ''
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                         await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
@@ -733,7 +727,7 @@ export const getMessage = async (req, res) => {
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                         const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon ${process.env.WEB_URL}/llamadas/Llamada%20de%20orientación en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                        information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                     }
                     if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                         const cart = await Cart.findOne({ phone: number }).lean()

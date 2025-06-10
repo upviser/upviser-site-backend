@@ -18,12 +18,12 @@ export const responseMessage = async (req, res) => {
             if (messages[0].agent) {
                 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                 let products
-                const context = messages.reverse().flatMap(ult => {
+                const context = messages.flatMap(ult => {
                     const userMessage = ult.message ? [{"role": "user", "content": [{"type": "text", "text": ult.message}]}] : [];
                     const assistantMessage = ult.response ? [{"role": "assistant", "content": [{"type": "text", "text": ult.response}]}] : [];
                     return [...userMessage, ...assistantMessage];
                 });
-                const conversation = messages.reverse().flatMap(ult => {
+                const conversation = messages.flatMap(ult => {
                     const userMessage = ult.message ? [{"role": "user", "content": ult.message}] : [];
                     const assistantMessage = ult.response ? [{"role": "assistant", "content": ult.response}] : [];
                     return [...userMessage, ...assistantMessage];
@@ -118,7 +118,7 @@ export const responseMessage = async (req, res) => {
                 }
                 if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                     const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                    information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada pon <a href="/llamadas/Llamada%20de%20orientación">Llamada de orientación</a> en el caso que el nombre de la llamada sea "Llamada de orientación"`
+                    information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su enlace de esta forma: <a href="/llamadas/Nombre%20de%20la%20llamada">Nombre de la llamada</a> utilizando el call.nameMeeting`
                 }
                 if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                     const CartSchema = z.object({
