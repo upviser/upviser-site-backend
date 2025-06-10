@@ -568,6 +568,7 @@ export const getMessage = async (req, res) => {
                             presence_penalty: 0,
                             store: false
                         });
+                        console.log(response.choices[0].message.content)
                         await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                             "recipient": {
                                 "id": sender
