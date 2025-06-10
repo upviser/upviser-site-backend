@@ -336,6 +336,8 @@ export const getMessage = async (req, res) => {
                         const assistantMessage = ult.response ? [{"role": "assistant", "content": ult.response}] : [];
                         return [...userMessage, ...assistantMessage];
                     });
+                    console.log(conversation)
+                    console.log(message)
                     const TypeSchema = z.object({
                         intentions: z.array(z.string())
                     })
