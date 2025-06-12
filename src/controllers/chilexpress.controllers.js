@@ -28,6 +28,7 @@ export const editChilexpress = async (req, res) => {
 export const getChilexpress = async (req, res) => {
     try {
         const chilexpress = await Chilexpress.findOne()
+        if (!chilexpress) return res.send({ message: 'Not Found' })
         return res.send(chilexpress)
     } catch (error) {
         return res.status(500).json({ message: error.message })
