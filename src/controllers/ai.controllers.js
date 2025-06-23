@@ -1,7 +1,13 @@
 import OpenAI, { toFile } from "openai"
-import fs from "fs"
+import fs from 'fs'
+import { unlink } from "fs/promises"
 import imageType from "image-type"
 import https from 'https'
+import axios from 'axios'
+import RunwayML from '@runwayml/sdk'
+import { Readable } from 'stream';
+import { uploadToBunny } from '../utils/bunny.js'
+import path from 'path';
 
 export const createDescriptionProduct = async (req, res) => {
     try {
@@ -487,4 +493,218 @@ export const createImageProduct = async (req, res) => {
     } catch (error) {
         return res.status(500).json({message: error.message})
     }
+}
+
+export const createText = async (req, res) => {
+  try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+          
+    const response = await openai.responses.create({
+      model: "gpt-4.1",
+      input: [
+        {
+          "role": "system",
+          "content": [
+            {
+              "type": "input_text",
+              "text": `Crea textos para contenidos utilizando un tono ${req.body.type === 'Personalizado' ? req.body.personalizeType : req.body.type}.`
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": req.body.promt
+            }
+          ]
+        }
+      ],
+      text: {
+        "format": {
+          "type": "text"
+        }
+      },
+      reasoning: {},
+      tools: [],
+      temperature: 1,
+      max_output_tokens: 2048,
+      top_p: 1,
+      store: true
+    });
+    return res.send(response.output_text)
+  } catch (error) {
+    return res.status(500).json({message: error.message})
+  }
+}
+
+export const createImage = async (req, res) => {
+  try {
+    const generationResponse = await axios.post(
+      'https://kieai.erweima.ai/api/v1/flux/kontext/generate',
+      {
+        prompt: req.body.promt,
+        enableTranslation: true,
+        inputImage: req.body.image,
+        aspectRatio: req.body.size,
+        outputFormat: 'jpeg',
+        promptUpsampling: false,
+        model: 'flux-kontext-pro'
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.KIE_TOKEN}`
+        },
+        maxBodyLength: Infinity
+      }
+    );
+
+    const taskId = generationResponse.data?.data?.taskId;
+    if (!taskId) {
+      return res.status(500).json({ message: 'No se obtuvo un taskId válido.' });
+    }
+
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    let imageUrl;
+    for (let i = 0; i < 12; i++) {
+      await delay(10000);
+      const st = await axios.get(
+        `https://kieai.erweima.ai/api/v1/flux/kontext/record-info?taskId=${taskId}`,
+        { headers: { Authorization: `Bearer ${process.env.KIE_TOKEN}` }, maxBodyLength: Infinity }
+      );
+      imageUrl = st.data.data.response?.resultImageUrl;
+      if (imageUrl) break;
+    }
+    if (!imageUrl) return res.status(408).json({ message: 'Timeout de generación' });
+
+    const imageResp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const buffer = Buffer.from(imageResp.data)
+
+    const fileName = `${taskId}.jpeg`
+    const stream = new Readable({
+      read() {
+        this.push(buffer);
+        this.push(null);
+      }
+    })
+    const cdnUrl = await uploadToBunny({ fileName, stream })
+
+    if (cdnUrl) {
+      return res.status(200).json(cdnUrl);
+    } else {
+      return res.status(408).json({ message: 'Tiempo de espera agotado. Imagen no generada.' });
+    }
+
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export const createVideo = async (req, res) => {
+  try {
+    const generationResponse = await axios.post(
+      'https://kieai.erweima.ai/api/v1/runway/generate',
+      {
+        prompt: req.body.promt,
+        imageUrl: req.body.image,
+        duration: req.body.duration,
+        quality: req.body.quality,
+        aspectRatio: req.body.size,
+        waterMark: ''
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.KIE_TOKEN}`
+        },
+        maxBodyLength: Infinity
+      }
+    );
+
+    const taskId = generationResponse.data?.data?.taskId;
+    if (!taskId) {
+      return res.status(500).json({ message: 'No se obtuvo un taskId válido.' });
+    }
+
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    let videoUrl;
+    for (let i = 0; i < 12; i++) {
+      await delay(20000);
+      const st = await axios.get(
+        `https://kieai.erweima.ai/api/v1/runway/record-detail?taskId=${taskId}`,
+        { headers: { Authorization: `Bearer ${process.env.KIE_TOKEN}` }, maxBodyLength: Infinity }
+      );
+      videoUrl = st.data.data.videoInfo?.videoUrl;
+      if (videoUrl) break;
+    }
+    if (!videoUrl) return res.status(408).json({ message: 'Timeout de generación' });
+
+    const tmpPath = path.join('/tmp', `video-${taskId}.mp4`);
+    const writer = fs.createWriteStream(tmpPath);
+    const download = await axios.get(videoUrl, { responseType: 'stream' });
+    download.data.pipe(writer);
+    await new Promise((r, e) => writer.on('finish', r).on('error', e));
+
+    // --- Crear video en Bunny ---
+    const fileName = path.basename(tmpPath);
+    const createRes = await axios.post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos`,
+      { title: fileName },
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY
+        }
+      }
+    );
+    const guid = createRes.data.guid;
+    if (!guid) throw new Error('No se recibió guid de Bunny.');
+
+    await axios({
+      method: 'PUT',
+      url: `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${guid}`,
+      headers: {
+        Accept: 'application/json',
+        AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY,
+        'Content-Type': 'application/octet-stream'
+      },
+      data: fs.createReadStream(tmpPath),
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity
+    });
+
+    let videoStatus = 0;
+    for (let i = 0; i < 10; i++) {
+      await delay(3000);
+      const statusRes = await axios.get(
+        `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${guid}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY
+          }
+        }
+      );
+      videoStatus = statusRes.data.status;
+      if (videoStatus === 3) break;
+    }
+
+    if (videoStatus !== 3) {
+      console.warn('El video fue subido, pero Bunny aún no lo procesó completamente.');
+    }
+
+    await unlink(tmpPath);
+
+    const embedUrl = `https://iframe.mediadelivery.net/embed/${process.env.BUNNY_STREAM_LIBRARY}/${guid}`;
+    res.json(embedUrl);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 }
