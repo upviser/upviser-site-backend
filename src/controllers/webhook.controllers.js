@@ -14,6 +14,7 @@ import Cart from '../models/Cart.js'
 import Integration from '../models/Integrations.js'
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import ShopLogin from '../models/ShopLogin.js'
 
 export const createWebhook = async (req, res) => {
     const storeData = await StoreData.findOne().lean()
@@ -27,13 +28,14 @@ export const createWebhook = async (req, res) => {
 export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
+        const shopLogin = await ShopLogin.findOne({ type: 'administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {  
             const message = req.body.entry[0].changes[0].value.messages[0].text.body
             const number = req.body.entry[0].changes[0].value.messages[0].from
             if (integration.whatsappToken && integration.whatsappToken !== '') {
                 const messages = await WhatsappMessage.find({phone: number}).select('-phone -_id').sort({ createdAt: -1 }).limit(2).lean()
-                if (messages && messages.length && messages[0].agent) {
+                if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                     const newMessage = new WhatsappMessage({phone: number, message: message, agent: true, view: false})
                     await newMessage.save()
                     io.emit('whatsapp', newMessage)
@@ -314,7 +316,7 @@ export const getMessage = async (req, res) => {
             const sender = req.body.entry[0].messaging[0].sender.id
             if (integration.messengerToken) {
                 const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
-                if (messages && messages.length && messages[0].agent) {
+                if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                     const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
                     await newMessage.save()
                     io.emit('whatsapp', newMessage)
@@ -605,7 +607,7 @@ export const getMessage = async (req, res) => {
             const sender = req.body.entry[0].messaging[0].sender.id
             if (integration.messengerToken) {
                 const messages = await InstagramMessage.find({instagramId: sender}).select('-instagramId -_id').sort({ createdAt: -1 }).limit(2).lean()
-                if (messages && messages.length && messages[0].agent) {
+                if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                     const newMessage = new InstagramMessage({instagramId: sender, message: message, agent: true, view: false})
                     await newMessage.save()
                     io.emit('whatsapp', newMessage)

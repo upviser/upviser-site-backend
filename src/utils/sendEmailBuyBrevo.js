@@ -1,6 +1,7 @@
 import brevo from '@getbrevo/brevo'
 import { updateClientEmailStatus } from '../utils/updateEmail.js'
 import { NumberFormat } from '../utils/NumberFormat.js'
+import ShopLogin from '../models/ShopLogin.js'
 
 export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services }) => {
 
@@ -128,9 +129,11 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
         opened: false,
         clicked: false
     });
-    apiInstance.sendTransacEmail(sendSmtpEmail).then(function (data) {
+    const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
+    if (shopLogin?.emails > 0) {
+        const data = await apiInstance.sendTransacEmail(sendSmtpEmail)
         console.log('API called successfully. Returned data: ' + JSON.stringify(data));
-    }, function (error) {
-        console.error(error);
-    });
+        await ShopLogin.findByIdAndUpdate(shopLogin._id, { emails: shopLogin.emails - 1 })
+    }
+    
 }

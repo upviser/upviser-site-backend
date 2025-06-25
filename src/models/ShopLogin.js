@@ -6,7 +6,12 @@ const ShopLoginSchema = new mongoose.Schema({
     password: { type: String, required: true, select: false },
     type: { type: String, required: true },
     permissions: [{ type: String }],
-    plan: { type: String }
+    plan: { type: String },
+    imagesAI: { type: Number },
+    videosAI: { type: Number },
+    textAI: { type: Number },
+    conversationsAI: { type: Number },
+    emails: { type: Number }
 }, {
     timestamps: true
 })

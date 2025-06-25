@@ -125,7 +125,7 @@ export const createDefaultPages = async (req, res) => {
               header: true,
               metaTitle: 'Inicio',
               design: [
-                { content: 'Carrusel', info: { banner: [{ title: 'Lorem ipsum', description: 'Lorem, ipsum dolor sit amet consectetur adipisicing elit.', button: 'Lorem ipsum', buttonLink: '', image: '' }] } },
+                { content: 'Carrusel', info: { banner: [{ title: 'Lorem ipsum', description: 'Lorem, ipsum dolor sit amet consectetur adipisicing elit.', button: 'Lorem ipsum', buttonLink: '', image: 'https://upviser-website.b-cdn.net/8189.jpg' }], textColor: '#111111' } },
                 { content: 'Suscripción', info: { title: 'Suscribete a nuestra lista' } }
               ]
             },
@@ -174,7 +174,7 @@ export const createDefaultPages = async (req, res) => {
         await newDataEmail.save()
         const newDataPhone = new ClientData({ name: 'Teléfono', data: 'phone' })
         await newDataPhone.save()
-        const newStyle = new Style({ design: 'Borde', form: 'Cuadradas', primary: '#2167e5', button: '#ffffff' })
+        const newStyle = new Style({ design: 'Ninguno', form: 'Cuadradas', primary: '#2167e5', button: '#ffffff' })
         await newStyle.save()
         return res.json(newDesignSave)
     } catch (error) {

@@ -54,3 +54,21 @@ export const getAccounts = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const getAccountAdmin = async (req, res) => {
+    try {
+        const account = await ShopLogin.findOne({ type: "Administrador" }).lean()
+        return res.send(account)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
+export const editAccountAdmin = async (req, res) => {
+    try {
+        const account = await ShopLogin.findOneAndUpdate({ type: "Administrador" }, req.body, { new: true }).lean()
+        return res.send(account)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}

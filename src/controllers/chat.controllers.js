@@ -8,10 +8,12 @@ import Funnel from '../models/Funnel.js'
 import Politics from '../models/Politics.js'
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import ShopLogin from '../models/ShopLogin.js'
 
 export const responseMessage = async (req, res) => {
     try {
-        if (req.body.agent) {
+        const shopLogin = await ShopLogin.findOne({ type: 'administrador' })
+        if (req.body.agent || shopLogin.conversationsAI > 1) {
             const message = req.body.message
             const senderId = req.body.senderId
             const messages = await ChatMessage.find({ senderId: senderId }).select('-senderId -_id -adminView -userView -agent').sort({ createdAt: -1 }).limit(2).lean();
@@ -230,7 +232,7 @@ export const responseMessage = async (req, res) => {
                 return res.send(newMessage)
             }
         } else {
-            const newMessage = new ChatMessage(req.body)
+            const newMessage = new ChatMessage({ ...req.body, agent: false })
             await newMessage.save()
             return res.send(newMessage)
         }
