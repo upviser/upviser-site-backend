@@ -8,6 +8,7 @@ const SellSchema = mongoose.Schema({
   firstName: { type: String, require: true, trim: true },
   lastName: { type: String, required: true, trim: true },
   address: { type: String, required: true, trim: true },
+  number: { type: Number, required: true, trim: true },
   details: { type: String, trim: true },
   phone: { type: Number, trim: true },
   coupon: { type: String, trim: true },
@@ -19,6 +20,7 @@ const SellSchema = mongoose.Schema({
   shippingMethod: { type: String, required: true },
   shippingState: { type: String, required: true },
   shippingCode: { type: String },
+  shippingLabel: { type: String },
   subscription: { type: Boolean }
 }, {
   timestamps: true

@@ -19,7 +19,6 @@ export const createOrder = async (req, res) => {
       }
     }).catch(console.log)
 
-    // res.json({ message: "Payment creted" })
     res.json(result)
   } catch (error) {
     return res.status(500).json({ message: "Something goes wrong" })

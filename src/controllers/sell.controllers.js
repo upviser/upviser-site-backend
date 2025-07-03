@@ -3,12 +3,13 @@ import Product from '../models/Product.js'
 import bizSdk from 'facebook-nodejs-business-sdk'
 import Integrations from '../models/Integrations.js'
 import { sendEmailBuyBrevo } from '../utils/sendEmailBuyBrevo.js'
+import { sendEmailBrevo } from '../utils/sendEmailBrevo.js'
 import StoreData from '../models/StoreData.js'
 import Style from '../models/Style.js'
 
 export const createSell = async (req, res) => {
     try {
-        const {email, region, city, firstName, lastName, address, departament, phone, coupon, cart, shipping, state, pay, total, fbp, fbc, shippingMethod, shippingState, subscription} = req.body
+        const {email, region, city, firstName, lastName, address, details, phone, coupon, cart, shipping, state, pay, total, fbp, fbc, shippingMethod, shippingState, subscription} = req.body
         const integrations = await Integrations.findOne().lean()
         if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
             if (state === 'Pago realizado') {
@@ -102,7 +103,7 @@ export const createSell = async (req, res) => {
         const cuponUpper = coupon?.toUpperCase()
         const sells = await Sell.countDocuments()
         const buyOrder = `BLASPOD-${1001 + Number(sells)}`
-        const newSell = new Sell({email, region, city, firstName: firstName[0].toUpperCase() + firstName.substring(1), lastName: lastName[0].toUpperCase() + lastName.substring(1), address, departament, phone: phone, coupon: cuponUpper, cart, shipping, state, pay, total, shippingMethod, shippingState, buyOrder, subscription})
+        const newSell = new Sell({email, region, city, firstName: firstName[0].toUpperCase() + firstName.substring(1), lastName: lastName[0].toUpperCase() + lastName.substring(1), address, details, phone: phone, coupon: cuponUpper, cart, shipping, state, pay, total, shippingMethod, shippingState, buyOrder, subscription, shippingLabel: req.body.shippingLabel, number: req.body.number})
         const sellSave = await newSell.save()
         res.json(sellSave)
         setTimeout(async () => {
@@ -167,17 +168,13 @@ export const getSellEmail = async (req, res) => {
 
 export const updateSell = async (req, res) => {
     try {
-        const { sell, shippingCode, fbp, fbc } = req.body
+        const { sell, fbp, fbc } = req.body
         const updateSell = await Sell.findByIdAndUpdate(req.params.id, {...sell, shippingCode: shippingCode}, {new: true})
         if (sell.shippingState === 'Productos empaquetados') {
-            
+            await sendEmailBrevo({ subscribers: [{ firstName: sell.firstName, email: sell.email }], emailData: { affair: 'Los productos de tu compra ya han sido empaquetados', title: 'Te avisaremos cuando ya esten tus productos en camino', paragraph: 'Hola, te queriamos comentar que ya hemos empaquetado los productos de tu compra, en cuanto realicemos el envio te avisaremos por este medio.' } })
         }
         if (sell.shippingState === 'Envío realizado') {
-            if (shippingCode) {
-                
-            } else {
-                
-            }
+            await sendEmailBrevo({ subscribers: [{ firstName: sell.firstName, email: sell.email }], emailData: { affair: 'Tus productos ya se encuentran en camino', title: 'Tu compra ya esta en camino a tu hogar', paragraph: 'Hola, queriamos comentarte que ya hemos realizado el envio de los productos de tu compra.' } })
         }
         if (sell.state === 'Pago realizado') {
             const CustomData = bizSdk.CustomData

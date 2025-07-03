@@ -3,7 +3,9 @@ import mongoose from 'mongoose'
 const ChilexpressSchema = new mongoose.Schema({
     active: { type: Boolean },
     coberturaKey: { type: String },
-    cotizadorKey: { type: String }
+    cotizadorKey: { type: String },
+    enviosKey: { type: String },
+    cardNumber: { type: Number }
 }, {
     timestamps: true
 })

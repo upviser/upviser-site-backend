@@ -23,8 +23,10 @@ export const createPay = async (req, res) => {
 export const createSuscribe = async (req, res) => {
     try {
         const paymentData = await Paym.findOne()
-        const client = new MercadoPagoConfig({ accessToken: paymentData.mercadoPagoSuscription.accessToken, options: { timeout: 5000 } });
+        const client = new MercadoPagoConfig({ accessToken: paymentData.suscription.accessToken, options: { timeout: 5000 } });
+        console.log(client)
         const preapproval = new PreApproval(client);
+        console.log(preapproval)
         const body = {
             reason: `Suscripción ${req.body.frequency}`,
             payer_email: req.body.email,
@@ -34,14 +36,15 @@ export const createSuscribe = async (req, res) => {
                 frequency_type: req.body.frequency === 'Mensual' ? 'months' : 'years',
                 transaction_amount: req.body.price,
                 currency_id: 'CLP',
-                start_date: new Date()
+                start_date: new Date().toISOString()
             },
             back_url: `${process.env.WEB_URL}/gracias-por-comprar`,
             status: 'authorized'
         };
-
+        console.log(body)
         const response = await preapproval.create({ body });
-        return res.json(response.body);
+        console.log(response)
+        return res.json(response);
     } catch (error) {
         return res.status(500).json({message: error.message})
     }
