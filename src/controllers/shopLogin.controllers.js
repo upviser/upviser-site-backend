@@ -10,7 +10,7 @@ export const createAccount = async (req, res) => {
         const user = await ShopLogin.findOne({ email: email })
         if (user) return res.send({ message: 'El email ya esta registrado' })
         const hashedPassword = await bcrypt.hash(password, 12)
-        const newAccount = new ShopLogin({ name, email, password: hashedPassword, type, permissions, plan })
+        const newAccount = new ShopLogin({ ...req.body, password: hashedPassword })
         const accountSave = await newAccount.save()
         return res.send({ name, email: accountSave.email, _id: accountSave._id, type, permissions, plan })
     } catch (error) {
