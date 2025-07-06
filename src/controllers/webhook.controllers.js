@@ -852,7 +852,6 @@ export const getMessage = async (req, res) => {
                                 }
                             }
                             if (information !== '') {
-                                console.log(information)
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
