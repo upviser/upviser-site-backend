@@ -39,6 +39,7 @@ export const getMessage = async (req, res) => {
                 const message = req.body.entry[0].changes[0].value.messages[0].text.body
                 const number = req.body.entry[0].changes[0].value.messages[0].from
                 if (integration.whatsappToken && integration.whatsappToken !== '') {
+                    console.log('si tiene token')
                     const messages = await WhatsappMessage.find({phone: number}).select('-phone -_id').sort({ createdAt: -1 }).limit(2).lean()
                     if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                         console.log('sin agente ia')
@@ -318,9 +319,11 @@ export const getMessage = async (req, res) => {
                         }
                     }
                 } else {
+                    console.log('error no existe token')
                     return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
+                console.log('cliente')
                 const client = await Client.findOne({ 'data': { $elemMatch: { name: 'id_numero', value: req.body.entry[0].changes[0].value.metadata.phone_number_id } } }).lean()
                 if (client) {
                     await axios.post(client.data.find(data => data.name === 'api').value, req.body)
