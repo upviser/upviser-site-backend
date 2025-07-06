@@ -29,28 +29,20 @@ export const createWebhook = async (req, res) => {
 export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
-        const shopLogin = await ShopLogin.findOne({ type: 'administrador' })
+        const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {  
-            console.log(req.body.entry[0].changes[0].value.metadata.phone_number_id)
-            console.log(integration.idPhone)
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
-                console.log('Whatsapp')
                 const message = req.body.entry[0].changes[0].value.messages[0].text.body
                 const number = req.body.entry[0].changes[0].value.messages[0].from
                 if (integration.whatsappToken && integration.whatsappToken !== '') {
-                    console.log('si tiene token')
                     const messages = await WhatsappMessage.find({phone: number}).select('-phone -_id').sort({ createdAt: -1 }).limit(2).lean()
-                    console.log(messages)
-                    console.log(shopLogin)
                     if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
-                        console.log('sin agente ia')
                         const newMessage = new WhatsappMessage({phone: number, message: message, agent: true, view: false})
                         await newMessage.save()
                         io.emit('whatsapp', newMessage)
                         return res.sendStatus(200)
                     } else {
-                        console.log('agente ia')
                         const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                         let products
                         const context = messages.flatMap(ult => {
@@ -77,7 +69,6 @@ export const getMessage = async (req, res) => {
                                 format: zodTextFormat(TypeSchema, "type"),
                             },
                         });
-                        console.log(type.output_parsed)
                         let information = ''
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
@@ -288,7 +279,6 @@ export const getMessage = async (req, res) => {
                                 presence_penalty: 0,
                                 store: false
                             });
-                            console.log(response.choices[0].message.content)
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
                                 "to": number,
