@@ -361,6 +361,7 @@ export const getMessage = async (req, res) => {
                                     format: zodTextFormat(TypeSchema, "type"),
                                 },
                             })
+                            console.log(type.output_parsed)
                             let information = ''
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                                 await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
@@ -577,6 +578,7 @@ export const getMessage = async (req, res) => {
                                     presence_penalty: 0,
                                     store: false
                                 });
+                                console.log(response.choices[0].message.content)
                                 await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                     "recipient": {
                                         "id": sender
