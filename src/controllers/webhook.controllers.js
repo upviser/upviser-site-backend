@@ -323,6 +323,7 @@ export const getMessage = async (req, res) => {
             }
         } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
             if (req.body.entry[0].id === integration.idPage || req.body.entry[0].id === integration.idInstagram) {
+                console.log(req.body.entry[0].id)
                 if (req.body.entry[0].id === integration.idPage) {
                     const message = req.body.entry[0].messaging[0].message.text
                     const sender = req.body.entry[0].messaging[0].sender.id
