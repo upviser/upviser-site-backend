@@ -15,7 +15,7 @@ import Integration from '../models/Integrations.js'
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import ShopLogin from '../models/ShopLogin.js'
-import Client from "../models/Client.js"
+import User from "../models/User.js"
 
 export const createWebhook = async (req, res) => {
     const storeData = await StoreData.findOne().lean()
@@ -314,9 +314,9 @@ export const getMessage = async (req, res) => {
                     return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
-                const client = await Client.findOne({ 'data': { $elemMatch: { name: 'id_numero', value: req.body.entry[0].changes[0].value.metadata.phone_number_id } } }).lean()
-                if (client) {
-                    await axios.post(client.data.find(data => data.name === 'api').value, req.body)
+                const user = await User.findOne({ idNumber: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
+                if (user) {
+                    await axios.post(`${user.api}/webhook`, req.body)
                 } else {
                     return res.json({ message: 'Error: No existe cliente con este id.' })
                 }
@@ -907,11 +907,14 @@ export const getMessage = async (req, res) => {
                     }
                 }
             } else {
-                const client = await Client.findOne({
-                    data: { $elemMatch: { name: { $in: ['id_messenger', 'id_instagram'] }, value: req.body.entry[0].id } }
+                const user = await User.findOne({
+                    $or: [
+                        { idPage: id },
+                        { idInstagram: id }
+                    ]
                 }).lean();
-                if (client) {
-                    await axios.post(`${client.data.find(data => data.name === 'api').value}/webhook`, req.body)
+                if (user) {
+                    await axios.post(`${user.api}/webhook`, req.body)
                 } else {
                     return res.json({ message: 'Error: No existe cliente con este id.' })
                 }
