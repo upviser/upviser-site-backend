@@ -325,9 +325,11 @@ export const getMessage = async (req, res) => {
             if (req.body.entry[0].id === integration.idPage || req.body.entry[0].id === integration.idInstagram) {
                 console.log(req.body.entry[0].id)
                 if (req.body.entry[0].id === integration.idPage) {
+                    console.log('si')
                     const message = req.body.entry[0].messaging[0].message.text
                     const sender = req.body.entry[0].messaging[0].sender.id
                     if (integration.messengerToken) {
+                        console.log('token messenger')
                         const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
                         if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                             const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
@@ -335,6 +337,7 @@ export const getMessage = async (req, res) => {
                             io.emit('whatsapp', newMessage)
                             return res.sendStatus(200)
                         } else {
+                            console.log('agente')
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                             let products
                             const context = messages.flatMap(ult => {
