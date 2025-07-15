@@ -32,6 +32,7 @@ export const getMessage = async (req, res) => {
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {  
+            console.log(req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone)
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
                 const message = req.body.entry[0].changes[0].value.messages[0].text.body
                 const number = req.body.entry[0].changes[0].value.messages[0].from
@@ -43,6 +44,7 @@ export const getMessage = async (req, res) => {
                         io.emit('whatsapp', newMessage)
                         return res.sendStatus(200)
                     } else {
+                        console.log('agente')
                         const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                         let products
                         const context = messages.flatMap(ult => {
@@ -69,6 +71,7 @@ export const getMessage = async (req, res) => {
                                 format: zodTextFormat(TypeSchema, "type"),
                             },
                         });
+                        console.log(type.output_parsed)
                         let information = ''
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
@@ -279,6 +282,7 @@ export const getMessage = async (req, res) => {
                                 presence_penalty: 0,
                                 store: false
                             });
+                            console.log(response.choices[0].message.content)
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
                                 "to": number,
