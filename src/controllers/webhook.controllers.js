@@ -293,7 +293,7 @@ export const getMessage = async (req, res) => {
                                     'Content-Type': 'application/json',
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
-                            })
+                            }).catch((error) => console.log(error))
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: response.choices[0].message.content, agent: false, view: false})
                             await newMessage.save()
                             return res.send(newMessage)
