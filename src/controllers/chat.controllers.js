@@ -258,13 +258,21 @@ export const getIds = async (req, res) => {
             },
             {
                 $sort: { createdAt: -1 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    senderId: 1,
+                    agent: 1,
+                    view: 1,
+                    createdAt: 1
+                }
             }
         ]).exec((err, result) => {
             if (err) {
                 return res.sendStatus(404)
             }
-            const filtered = result.map(({senderId, adminView, createdAt}) => ({senderId, adminView, createdAt}))
-            return res.send(filtered)
+            return res.send(result)
         })
     } catch (error) {
         return res.status(500).json({ message: error.message })

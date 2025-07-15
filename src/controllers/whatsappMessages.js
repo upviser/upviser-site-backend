@@ -6,29 +6,37 @@ export const getPhones = async (req, res) => {
     try {
         WhatsappChat.aggregate([
             {
-                $sort: { phone: 1, _id: -1 }
+                $sort: { phone: 1, createdAt: -1 } // ordenamos por phone y luego por fecha descendente
             },
             {
                 $group: {
                     _id: '$phone',
-                    lastDocument: { $first: '$$ROOT' }
+                    lastMessage: { $first: '$$ROOT' } // el más reciente por phone
                 }
             },
             {
-                $replaceRoot: { newRoot: '$lastDocument' }
+                $replaceRoot: { newRoot: '$lastMessage' }
             },
             {
-                $sort: { createdAt: -1 }
+                $sort: { createdAt: -1 } // ordenamos todos los últimos mensajes por fecha
+            },
+            {
+                $project: {
+                    _id: 0,
+                    phone: 1,
+                    agent: 1,
+                    view: 1,
+                    createdAt: 1
+                }
             }
         ]).exec((err, result) => {
             if (err) {
-                return res.sendStatus(404)
+                return res.sendStatus(404);
             }
-            const filtered = result.map(({phone, view, createdAt}) => ({phone, view, createdAt}))
-            return res.send(filtered)
-        })
+            return res.send(result);
+        });
     } catch (error) {
-        return res.status(500).json({message: error.message})
+        return res.status(500).json({ message: error.message });
     }
 }
 

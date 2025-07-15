@@ -151,6 +151,15 @@ io.on('connection', async (socket) => {
     socket.on('newNotification', (message) => {
         socket.broadcast.emit('newNotification', message)
     })
+    socket.on('whatsapp', async (message) => {
+        socket.broadcast.emit('whatsapp', message)
+    })
+    socket.on('messenger', async (message) => {
+        socket.broadcast.emit('messenger', message)
+    })
+    socket.on('instagram', async (message) => {
+        socket.broadcast.emit('instagram', message)
+    })
 })
 
 export { io }
