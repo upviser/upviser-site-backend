@@ -78,16 +78,19 @@ export const getMessage = async (req, res) => {
                                 "messaging_product": "whatsapp",
                                 "to": number,
                                 "type": "text",
-                                "text": {"body": 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento'}
+                                "text": {"body": 'Te estoy transfieriendo con alguien de soporte en este momento'}
                             }, {
                                 headers: {
                                     'Content-Type': 'application/json',
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
                             })
-                            const newMessage = new WhatsappMessage({ phone: number, message: message, response: 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
+                            const newMessage = new WhatsappMessage({ phone: number, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
                             await newMessage.save()
                             io.emit('whatsapp', newMessage)
+                            const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
+                            await notification.save()
+                            io.emit('newNotification')
                             return res.send(newMessage)
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
@@ -374,16 +377,19 @@ export const getMessage = async (req, res) => {
                                     },
                                     "messaging_type": "RESPONSE",
                                     "message": {
-                                        "text": 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento'
+                                        "text": 'Te estoy transfieriendo con alguien de soporte en este momento'
                                     }
                                 }, {
                                     headers: {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
                                 await newMessage.save()
-                                io.emit('whatsapp', newMessage)
+                                io.emit('messenger', newMessage)
+                                const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
+                                await notification.save()
+                                io.emit('newNotification')
                                 return res.send(newMessage)
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
@@ -668,16 +674,19 @@ export const getMessage = async (req, res) => {
                                     },
                                     "messaging_type": "RESPONSE",
                                     "message": {
-                                        "text": 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento'
+                                        "text": 'Te estoy transfieriendo con alguien de soporte en este momento'
                                     }
                                 }, {
                                     headers: {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
                                 await newMessage.save()
-                                io.emit('whatsapp', newMessage)
+                                io.emit('instagram', newMessage)
+                                const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
+                                await notification.save()
+                                io.emit('newNotification')
                                 return res.send(newMessage)
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
