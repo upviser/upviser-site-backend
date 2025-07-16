@@ -53,7 +53,7 @@ export const newMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         if (integration.whatsappToken && integration.whatsappToken !== '') {
-            await axios.post(`https://graph.facebook.com/v16.0/${integration.idPhone}/messages`, {
+            await axios.post(`https://graph.facebook.com/v21.0/${integration.idPhone}/messages`, {
                 "messaging_product": "whatsapp",
                 "to": req.body.phone,
                 "type": "text",

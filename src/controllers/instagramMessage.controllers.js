@@ -53,7 +53,7 @@ export const createMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         if (integration.messengerToken && integration.messengerToken !== '') {
-            await axios.post(`https://graph.facebook.com/v16.0/${integration.idInstagram}/messages?access_token=${integration.messengerToken}`, {
+            await axios.post(`https://graph.facebook.com/v21.0/${integration.idInstagram}/messages?access_token=${integration.messengerToken}`, {
                 "recipient": {
                     "id": req.body.instagramId
                 },
