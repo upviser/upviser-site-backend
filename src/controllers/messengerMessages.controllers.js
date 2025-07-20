@@ -1,6 +1,7 @@
 import MessengerMessage from '../models/MessengerChat.js'
 import axios from 'axios'
 import Integration from '../models/Integrations.js'
+import ShopLogin from '../models/ShopLogin.js'
 
 export const getMessengerIds = async (req, res) => {
     try {
