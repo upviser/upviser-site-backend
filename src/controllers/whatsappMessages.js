@@ -87,3 +87,105 @@ export const viewMessage = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const whatsappToken = async (req, res) => {
+  try {
+    const { code, phone_number_id, waba_id } = req.body
+
+    const tokenRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+      params: {
+        client_id: process.env.FB_APP_ID,
+        client_secret: process.env.FB_APP_SECRET,
+        redirect_uri: process.env.FB_REDIRECT_URI,
+        code,
+      },
+    });
+
+    const { access_token } = tokenRes.data;
+
+    await axios.post(`https://graph.facebook.com/v20.0/${waba_id}/subscribed_apps`, null, {
+      params: { access_token },
+    });
+
+    const integrations = await Integration.findOne().lean();
+    await Integration.findByIdAndUpdate(integrations._id, {
+      whatsappToken: access_token,
+      idPhone: phone_number_id,
+      waba: waba_id
+    }, { new: true });
+
+    const shopLogin = await ShopLogin.findOne({ type: 'Administrador' }).lean()
+    await axios.post(`${process.env.MAIN_API_URL}/user`, { email: shopLogin.email, api: process.env.NEXT_PUBLIC_API_URL, idPhone: phone_number_id })
+
+    res.status(200).json({ success: 'OK' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const createTemplate = async (req, res) => {
+    try {
+        const integrations = await Integration.findOne().lean()
+        const response = await axios.post(`https://graph.facebook.com/v20.0/${integrations.waba}/message_templates`, {
+            "name": req.body.name.toLowerCase().replaceAll(' ', '_'),
+            "language": "es",
+            "category": req.body.category,
+            "components": req.body.components
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": `Bearer ${integrations.whatsappToken}`
+            }
+        })
+        return res.json({ success: 'OK' })
+    } catch (error){
+        console.log(error.message)
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+export const getTemplates = async (req, res) => {
+  try {
+    const integrations = await Integration.findOne().lean();
+    const response = await axios.get(
+      `https://graph.facebook.com/v20.0/${integrations.waba}/message_templates`,
+      {
+        headers: { Authorization: `Bearer ${integrations.whatsappToken}` }
+      }
+    );
+    return res.json(response.data);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export const deleteTemplate = async (req, res) => {
+  try {
+    const integrations = await Integration.findOne().lean();
+    const response = await axios.delete(
+      `https://graph.facebook.com/v20.0/${integrations.waba}/message_templates?name=${req.params.name}`,
+      {
+        headers: { Authorization: `Bearer ${integrations.whatsappToken}` },
+      }
+    );
+    return res.json(response.data);
+  } catch (error) {
+    return res.status(500).json({ message: error.response?.data?.error || error.message });
+  }
+}
+
+export const editTemplate = async (req, res) => {
+    try {
+        const integrations = await Integration.findOne().lean();
+        const response = await axios.post(`https://graph.facebook.com/v20.0/${req.body.id}`, req.body, {
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": `Bearer ${integrations.whatsappToken}`
+            }
+        })
+        return res.json(response.data)
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}

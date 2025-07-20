@@ -5,6 +5,7 @@ const IntegrationsSchema = new mongoose.Schema({
     whatsappToken: { type: String },
     idPage: { type: String },
     idInstagram: { type: String },
+    userAccessToken: { type: String },
     messengerToken: { type: String },
     apiToken: { type: String },
     apiPixelId: { type: String },
