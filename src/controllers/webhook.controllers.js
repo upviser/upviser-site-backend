@@ -976,7 +976,7 @@ export const callbackFacebook = async (req, res) => {
             {
                 params: {
                     grant_type: 'ig_exchange_token',
-                    client_secret: process.env.FB_APP_SECRET,
+                    client_secret: process.env.IG_APP_SECRET,
                     access_token,
                 },
             }
@@ -1029,7 +1029,7 @@ export const callbackFacebook = async (req, res) => {
     
         res.status(200).json({ success: 'OK' });
     } catch (error) {
-        console.log(error)
+        console.log(error.response.data)
         return res.status(500).json({message: error.message})
     }
 }
