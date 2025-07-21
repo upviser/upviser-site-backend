@@ -952,8 +952,8 @@ export const callbackFacebook = async (req, res) => {
 
         const response = await axios.post(
             'https://api.instagram.com/oauth/access_token', {
-                client_id: process.env.FB_APP_ID,
-                client_secret: process.env.FB_APP_SECRET,
+                client_id: process.env.IG_APP_ID,
+                client_secret: process.env.IG_APP_SECRET,
                 grant_type: 'authorization_code',
                 redirect_uri: process.env.FB_REDIRECT_URI,
                 code,
