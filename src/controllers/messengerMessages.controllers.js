@@ -175,8 +175,6 @@ export const DisconnectFacebook = async (req, res) => {
         });
 
         await Integration.findOneAndUpdate({ messengerToken: '', idPage: '', idInstagram: '', userAccessToken: '' })
-        const shopLogin = await ShopLogin.findOne({ type: 'Administrador' }).lean()
-        await axios.post(`${process.env.MAIN_API_URL}/user`, { email: shopLogin.email, api: process.env.NEXT_PUBLIC_API_URL, idPage: '', idInstagram: '' })
         return res.json({ success: 'OK' })
     } catch (error) {
         return res.status(500).json({ error: error });
