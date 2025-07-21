@@ -943,3 +943,78 @@ export const getMessage = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const callbackFacebook = async (req, res) => {
+    try {
+        const { code } = req.query;
+
+        const response = await axios.post(
+            'https://api.instagram.com/oauth/access_token', {
+                client_id: process.env.FB_APP_ID,
+                client_secret: process.env.FB_APP_SECRET,
+                grant_type: 'authorization_code',
+                redirect_uri: process.env.FB_REDIRECT_URI,
+                code,
+            }
+        );
+
+        const { access_token, user_id } = response.data;
+
+        // Intercambiar el token de corta duración por uno de larga duración
+        const longLivedTokenResponse = await axios.get(
+            `https://graph.instagram.com/access_token`,
+            {
+                params: {
+                    grant_type: 'ig_exchange_token',
+                    client_secret: process.env.FB_APP_SECRET,
+                    access_token,
+                },
+            }
+        );
+
+        const longLivedAccessToken = longLivedTokenResponse.data.access_token;
+
+        // Obtener el ID de la cuenta de Instagram
+        const accountResponse = await axios.get(
+            `https://graph.instagram.com/${user_id}`,
+            {
+                params: {
+                    fields: 'id,username',
+                    access_token: longLivedAccessToken,
+                },
+            }
+        );
+
+        const { id: instagramBusinessAccountId } = accountResponse.data;
+
+        // Suscribirse al webhook de mensajes
+        await axios.post(
+            `https://graph.facebook.com/${user_id}/subscribed_apps`,
+            null,
+            {
+                params: {
+                    subscribed_fields: 'messages',
+                    access_token: longLivedAccessToken,
+                },
+            }
+        );
+
+        const integrations = await Integration.findOne().lean();
+        if (integrations) {
+            await Integration.findByIdAndUpdate(integrations._id, {
+                instagramToken: longLivedAccessToken,
+                idInstagram: instagramBusinessAccountId
+            });
+        } else {
+            const newIntegration = new Integration({
+                instagramToken: longLivedAccessToken,
+                idInstagram: instagramBusinessAccountId
+            })
+            await newIntegration.save()
+        }
+    
+        res.status(200).json({ success: 'OK' });
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
