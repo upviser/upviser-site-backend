@@ -971,16 +971,13 @@ export const callbackFacebook = async (req, res) => {
         const { access_token, user_id } = response.data;
 
         // Intercambiar el token de corta duración por uno de larga duración
-        const longLivedTokenResponse = await axios.post(
-            'https://graph.instagram.com/access_token',
-            qs.stringify({
-                grant_type: 'ig_exchange_token',
-                client_secret: process.env.IG_APP_SECRET,
-                access_token,
-            }),
+        const longLivedTokenResponse = await axios.get(
+            `https://graph.instagram.com/access_token`,
             {
-                headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                params: {
+                    grant_type: 'ig_exchange_token',
+                    client_secret: process.env.IG_APP_SECRET,
+                    access_token,
                 },
             }
         );
