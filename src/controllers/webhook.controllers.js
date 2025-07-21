@@ -957,6 +957,11 @@ export const callbackFacebook = async (req, res) => {
                 grant_type: 'authorization_code',
                 redirect_uri: process.env.FB_REDIRECT_URI,
                 code,
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
             }
         );
 
