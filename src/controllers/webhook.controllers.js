@@ -948,6 +948,8 @@ export const callbackFacebook = async (req, res) => {
     try {
         const { code } = req.query;
 
+        console.log(code)
+
         const response = await axios.post(
             'https://api.instagram.com/oauth/access_token', {
                 client_id: process.env.FB_APP_ID,
@@ -957,6 +959,8 @@ export const callbackFacebook = async (req, res) => {
                 code,
             }
         );
+
+        console.log(response.data)
 
         const { access_token, user_id } = response.data;
 
@@ -972,6 +976,8 @@ export const callbackFacebook = async (req, res) => {
             }
         );
 
+        console.log(longLivedTokenResponse.data)
+
         const longLivedAccessToken = longLivedTokenResponse.data.access_token;
 
         // Obtener el ID de la cuenta de Instagram
@@ -984,6 +990,8 @@ export const callbackFacebook = async (req, res) => {
                 },
             }
         );
+
+        console.log(accountResponse.data)
 
         const { id: instagramBusinessAccountId } = accountResponse.data;
 
