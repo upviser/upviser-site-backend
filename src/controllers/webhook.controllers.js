@@ -987,17 +987,12 @@ export const callbackFacebook = async (req, res) => {
         const longLivedAccessToken = longLivedTokenResponse.data.access_token;
 
         // Obtener el ID de la cuenta de Instagram
-        const accountResponse = await axios.get(
-            `https://graph.instagram.com/${user_id}`,
-            {
-                params: {
-                    fields: 'id,username',
-                    access_token: longLivedAccessToken,
-                },
-            }
+        const pagesResp = await axios.get(
+            `https://graph.facebook.com/v23.0/me/accounts`,
+            { params: { access_token: longLivedAccessToken } }
         );
 
-        console.log(accountResponse.data)
+        console.log(pagesResp.data)
 
         const { id: instagramBusinessAccountId } = accountResponse.data;
 
