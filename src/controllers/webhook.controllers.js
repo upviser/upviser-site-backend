@@ -986,6 +986,21 @@ export const callbackFacebook = async (req, res) => {
 
         const longLivedAccessToken = longLivedTokenResponse.data.access_token;
 
+        // Obtener el ID de la cuenta de Instagram
+        const accountResponse = await axios.get(
+            `https://graph.facebook.com/v23.0/me`,
+            {
+                params: {
+                    fields: 'user_id',
+                    access_token: longLivedAccessToken,
+                },
+            }
+        );
+
+        console.log(accountResponse.data)
+
+        const { id: instagramBusinessAccountId } = accountResponse.data;
+
         // Suscribirse al webhook de mensajes
         await axios.post(
             `https://graph.instagram.com/v23.0/${user_id}/subscribed_apps`,
@@ -997,21 +1012,6 @@ export const callbackFacebook = async (req, res) => {
                 },
             }
         );
-
-        // Obtener el ID de la cuenta de Instagram
-        const accountResponse = await axios.get(
-            `https://graph.instagram.com/v23.0/${user_id}`,
-            {
-                params: {
-                    fields: 'user_id,username',
-                    access_token: longLivedAccessToken,
-                },
-            }
-        );
-
-        console.log(accountResponse.data)
-
-        const { id: instagramBusinessAccountId } = accountResponse.data;
 
         const integrations = await Integration.findOne().lean();
         if (integrations) {
