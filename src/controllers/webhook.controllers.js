@@ -683,7 +683,7 @@ export const getMessage = async (req, res) => {
                                     }
                                 }, {
                                     headers: {
-                                        'Autorization': `Bearer ${integration.instagramToken}`,
+                                        'Authorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
                                 })
@@ -834,7 +834,7 @@ export const getMessage = async (req, res) => {
                                         }
                                     }, {
                                         headers: {
-                                            'Autorization': `Bearer ${integration.instagramToken}`,
+                                            'Authorization': `Bearer ${integration.instagramToken}`,
                                             'Content-Type': 'application/json'
                                         }
                                     })
@@ -866,7 +866,7 @@ export const getMessage = async (req, res) => {
                                         }
                                     }, {
                                         headers: {
-                                            'Autorization': `Bearer ${integration.instagramToken}`,
+                                            'Authorization': `Bearer ${integration.instagramToken}`,
                                             'Content-Type': 'application/json'
                                         }
                                     })
@@ -901,7 +901,7 @@ export const getMessage = async (req, res) => {
                                     }
                                 }, {
                                     headers: {
-                                        'Autorization': `Bearer ${integration.instagramToken}`,
+                                        'Authorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
                                 }).catch((error) => console.log(error.response.data))
@@ -918,7 +918,7 @@ export const getMessage = async (req, res) => {
                                     }
                                 }, {
                                     headers: {
-                                        'Autorization': `Bearer ${integration.instagramToken}`,
+                                        'Authorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
                                 })
