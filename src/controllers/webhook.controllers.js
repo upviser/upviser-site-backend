@@ -904,7 +904,7 @@ export const getMessage = async (req, res) => {
                                         'Autorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
-                                }).catch((error) => console.log(error))
+                                }).catch((error) => console.log(error.response.data))
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false})
                                 await newMessage.save()
                                 return res.send(newMessage)
