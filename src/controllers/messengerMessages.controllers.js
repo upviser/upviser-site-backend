@@ -117,27 +117,10 @@ export const MessengerToken = async (req, res) => {
     const longLivedPageToken = page.access_token;
     const pageId = page.id;
 
-    // 3. Obtener ID de Instagram
-    const igRes = await axios.get(`https://graph.facebook.com/v20.0/${pageId}`, {
-      params: {
-        fields: 'instagram_business_account',
-        access_token: longLivedPageToken
-      }
-    });
-    const igId = igRes.data.instagram_business_account?.id;
-    if (!igId) return res.status(400).json({ error: 'Sin cuenta IG vinculada.' });
-
     await axios.post(`https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`, null, {
       params: {
         access_token: longLivedPageToken,
         subscribed_fields: 'messages,messaging_postbacks'
-      }
-    });
-
-    await axios.post(`https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`, null, {
-      params: {
-        access_token: longLivedPageToken,
-        subscribed_fields: 'messages'
       }
     });
 
@@ -147,14 +130,12 @@ export const MessengerToken = async (req, res) => {
         await Integration.findByIdAndUpdate(integrations._id, {
             messengerToken: longLivedPageToken,
             idPage: pageId,
-            idInstagram: igId,
             userAccessToken: longLivedUserToken
         });
     } else {
         const newIntegration = new Integration({
             messengerToken: longLivedPageToken,
             idPage: pageId,
-            idInstagram: igId,
             userAccessToken: longLivedUserToken
         })
         await newIntegration.save()
