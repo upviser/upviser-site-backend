@@ -32,6 +32,7 @@ export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
+        console.log(req.body.entry)
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
@@ -670,16 +671,16 @@ export const getMessage = async (req, res) => {
                             });
                             let information = ''
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
-                                await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
                                         "id": sender
                                     },
-                                    "messaging_type": "RESPONSE",
                                     "message": {
                                         "text": 'Te estoy transfieriendo con alguien de soporte en este momento'
                                     }
                                 }, {
                                     headers: {
+                                        'Autorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
                                 })
@@ -821,16 +822,16 @@ export const getMessage = async (req, res) => {
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
                                 if (act.output_parsed.ready) {
-                                    await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                    await axios.post(`https://graph.instagram.com/v21.0/${integration.idInstagram}/messages`, {
                                         "recipient": {
                                             "id": sender
                                         },
-                                        "messaging_type": "RESPONSE",
                                         "message": {
                                             "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`
                                         }
                                     }, {
                                         headers: {
+                                            'Autorization': `Bearer ${integration.instagramToken}`,
                                             'Content-Type': 'application/json'
                                         }
                                     })
@@ -853,16 +854,16 @@ export const getMessage = async (req, res) => {
                                         presence_penalty: 0,
                                         store: false
                                     });
-                                    await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                    await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                         "recipient": {
                                             "id": sender
                                         },
-                                        "messaging_type": "RESPONSE",
                                         "message": {
                                             "text": get.choices[0].message.content
                                         }
                                     }, {
                                         headers: {
+                                            'Autorization': `Bearer ${integration.instagramToken}`,
                                             'Content-Type': 'application/json'
                                         }
                                     })
@@ -887,16 +888,16 @@ export const getMessage = async (req, res) => {
                                     presence_penalty: 0,
                                     store: false
                                 });
-                                await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
                                         "id": sender
                                     },
-                                    "messaging_type": "RESPONSE",
                                     "message": {
                                         "text": response.choices[0].message.content
                                     }
                                 }, {
                                     headers: {
+                                        'Autorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
                                 })
@@ -904,16 +905,16 @@ export const getMessage = async (req, res) => {
                                 await newMessage.save()
                                 return res.send(newMessage)
                             } else {
-                                await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
                                         "id": sender
                                     },
-                                    "messaging_type": "RESPONSE",
                                     "message": {
                                         "text": 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar'
                                     }
                                 }, {
                                     headers: {
+                                        'Autorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
                                 })
