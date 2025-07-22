@@ -991,7 +991,7 @@ export const callbackFacebook = async (req, res) => {
             `https://graph.instagram.com/v23.0/${user_id}`,
             {
                 params: {
-                    fields: 'id,username',
+                    fields: 'user_id,username',
                     access_token: longLivedAccessToken,
                 },
             }
