@@ -632,7 +632,8 @@ export const getMessage = async (req, res) => {
                 } else if (req.body.entry[0].id === integration.idInstagram) {
                     const message = req.body.entry[0].messaging[0].message.text
                     const sender = req.body.entry[0].messaging[0].sender.id
-                    if (integration.messengerToken) {
+                    console.log(sender)
+                    if (integration.instagramToken) {
                         const messages = await InstagramMessage.find({instagramId: sender}).select('-instagramId -_id').sort({ createdAt: -1 }).limit(2).lean()
                         if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                             const newMessage = new InstagramMessage({instagramId: sender, message: message, agent: true, view: false})
@@ -643,6 +644,7 @@ export const getMessage = async (req, res) => {
                             io.emit('newNotification')
                             return res.sendStatus(200)
                         } else {
+                            console.log('agente')
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                             let products
                             const context = messages.flatMap(ult => {
@@ -669,6 +671,7 @@ export const getMessage = async (req, res) => {
                                     format: zodTextFormat(TypeSchema, "type"),
                                 },
                             });
+                            console.log(type.output_parsed)
                             let information = ''
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                                 await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
@@ -888,6 +891,7 @@ export const getMessage = async (req, res) => {
                                     presence_penalty: 0,
                                     store: false
                                 });
+                                console.log(response.choices[0].message.content)
                                 await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
                                         "id": sender
@@ -900,7 +904,7 @@ export const getMessage = async (req, res) => {
                                         'Autorization': `Bearer ${integration.instagramToken}`,
                                         'Content-Type': 'application/json'
                                     }
-                                })
+                                }).catch((error) => console.log(error))
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false})
                                 await newMessage.save()
                                 return res.send(newMessage)
