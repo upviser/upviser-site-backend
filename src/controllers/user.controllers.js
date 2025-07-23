@@ -15,3 +15,12 @@ export const createUser = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const getUser = async (req, res) => {
+    try {
+        const user = await User.findOne({ api: req.params.api }).lean()
+        return res.json(user)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}

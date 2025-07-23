@@ -1,7 +1,6 @@
 import InstagramMessage from '../models/InstagramChat.js'
 import axios from 'axios'
 import Integration from '../models/Integrations.js'
-import Integrations from '../models/Integrations.js'
 
 export const getInstagramIds = async (req, res) => {
     try {
@@ -93,7 +92,7 @@ export const viewMessage = async (req, res) => {
 
 export const deleteInstagram = async (req, res) => {
     try {
-        const integrations = await Integrations.findOne().lean()
+        const integrations = await Integration.findOne().lean()
         await axios.delete(
             `https://graph.instagram.com/v23.0/${integrations.idInstagram}/subscribed_apps`,
             {
@@ -103,7 +102,7 @@ export const deleteInstagram = async (req, res) => {
                 },
             }
         );
-        await Integrations.findByIdAndUpdate(integrations._id, { idInstagram: '', instagramToken: '' })
+        await Integration.findByIdAndUpdate(integrations._id, { idInstagram: '', instagramToken: '' })
         return res.json({ success: 'OK' })
     } catch (error) {
         return res.status(500).json({message: error.message})

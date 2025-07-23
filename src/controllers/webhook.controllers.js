@@ -18,6 +18,8 @@ import ShopLogin from '../models/ShopLogin.js'
 import User from "../models/User.js"
 import Notification from "../models/Notification.js"
 import qs from 'qs';
+import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 
 export const createWebhook = async (req, res) => {
     const storeData = await StoreData.findOne().lean()
@@ -947,7 +949,7 @@ export const getMessage = async (req, res) => {
 
 export const callbackFacebook = async (req, res) => {
     try {
-        const { code } = req.query;
+        const { code, state } = req.query;
 
         const response = await axios.post(
             'https://api.instagram.com/oauth/access_token', qs.stringify({
@@ -1005,6 +1007,13 @@ export const callbackFacebook = async (req, res) => {
             }
         );
 
+        if (state) {
+            const payload = jwt.verify(state, process.env.JWT_SECRET)
+            if (payload.exp < Date.now()) throw new Error('State expirado')
+            await axios.post(`${payload.api}/integrations`, { instagramToken: longLivedAccessToken, idInstagram: instagramBusinessAccountId })
+            return res.status(200).json({ success: 'OK' });
+        }
+
         const integrations = await Integration.findOne().lean();
         if (integrations) {
             await Integration.findByIdAndUpdate(integrations._id, {
@@ -1022,6 +1031,75 @@ export const callbackFacebook = async (req, res) => {
         res.status(200).json({ success: 'OK' });
     } catch (error) {
         console.log(error.response.data)
+        return res.status(500).json({message: error.message})
+    }
+}
+
+function parseSignedRequest(signedRequest) {
+  const [encodedSig, payload] = signedRequest.split('.', 2);
+  const sig = Buffer.from(encodedSig + '='.repeat((4 - encodedSig.length % 4) % 4), 'base64');
+  const data = JSON.parse(Buffer.from(payload + '='.repeat((4 - payload.length % 4) % 4), 'base64').toString('utf8'));
+
+  const expected = crypto.createHmac('sha256', process.env.FB_APP_SECRET)
+    .update(payload)
+    .digest();
+
+  if (!crypto.timingSafeEqual(sig, expected)) {
+    return null;
+  }
+  return data;
+}
+
+export const deleteData = async (req, res) => {
+    try {
+        const signedRequest = req.body.signed_request;
+        const data = parseSignedRequest(signedRequest);
+        if (!data || !data.user_id) {
+            return res.status(400).send('Invalid request');
+        }
+        const userId = data.user_id;
+        const integrations = await Integration.findOne({ $or: [{ idInstagram: userId }, { idPage: userId }, { idPhone: userId }] }).lean()
+        if (integrations) {
+            if (integrations.idInstagram === userId) {
+                await Integration.findByIdAndUpdate(integrations._id, { idInstagram: '', instagramToken: '' })
+            } else if (integrations.idPage === userId) {
+                await Integration.findByIdAndUpdate(integrations._id, { idPage: '', messengerToken: '' })
+            } else if (integrations.idPhone === userId) {
+                await Integration.findByIdAndUpdate(integrations._id, { idPhone: '', whatsappToken: '' })
+            }
+        } else {
+            const user = await User.findOne({
+                $or: [
+                    { idPage: userId },
+                    { idInstagram: userId },
+                    { idPhone: userId }
+                ]
+            }).lean();
+            if (user) {
+                if (user.idInstagram === userId) {
+                    await axios.post(`${user.api}/integrations`, { idInstagram: '', instagramToken: '' })
+                } else if (user.idPage === userId) {
+                    await axios.post(`${user.api}/integrations`,  { idPage: '', messengerToken: '' })
+                } else if (user.idPhone === userId) {
+                    await axios.post(`${user.api}/integrations`,  { idPhone: '', whatsappToken: '' })
+                }
+            }
+        }
+        const confirmationCode = `del_${userId}_${Date.now()}`;
+        const statusUrl = `${process.env.MY_PUBLIC_URL}/delete-status?code=${confirmationCode}`;
+        res.status(200).json({
+            url: statusUrl,
+            confirmation_code: confirmationCode
+        });
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
+export const deleteStatus = async (req, res) => {
+    try {
+        res.json({ status: 'deleted', message: 'Datos eliminados' });
+    } catch (error) {
         return res.status(500).json({message: error.message})
     }
 }
