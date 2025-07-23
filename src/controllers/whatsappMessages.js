@@ -189,3 +189,16 @@ export const editTemplate = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 }
+
+export const DisconnectWhatsapp = async (req, res) => {
+    try {
+        const integrations = await Integration.findOne().lean()
+        await axios.delete(`https://graph.facebook.com/v20.0/${integrations.waba}/subscribed_apps`, {
+            params: { access_token: integrations.whatsappToken }
+        });
+        await Integration.findOneAndUpdate({ whatsappToken: '', idPhone: '', waba: '' })
+        return res.json({ success: 'OK' })
+    } catch (error) {
+        return res.status(500).json({ error: error });
+    }
+}
