@@ -1058,6 +1058,7 @@ export const deleteData = async (req, res) => {
             return res.status(400).send('Invalid request');
         }
         const userId = data.user_id;
+        console.log(userId)
         const integrations = await Integration.findOne({ $or: [{ idInstagram: userId }, { idPage: userId }, { idPhone: userId }] }).lean()
         if (integrations) {
             if (integrations.idInstagram === userId) {
