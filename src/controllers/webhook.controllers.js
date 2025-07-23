@@ -1052,6 +1052,7 @@ function parseSignedRequest(signedRequest) {
 
 export const deleteData = async (req, res) => {
     try {
+        console.log(req.body)
         const signedRequest = req.body.signed_request;
         const data = parseSignedRequest(signedRequest);
         if (!data || !data.user_id) {
