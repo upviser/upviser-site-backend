@@ -277,7 +277,7 @@ export const getMessage = async (req, res) => {
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
-                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente del sitio web en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}.`}]},
+                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial.`}]},
                                     ...context,
                                     {"role": "user", "content": [{"type": "text", "text": message}]}
                                 ],
@@ -580,7 +580,7 @@ export const getMessage = async (req, res) => {
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente del sitio web en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}.`}]},
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial.`}]},
                                         ...context,
                                         {"role": "user", "content": [{"type": "text", "text": message}]}
                                     ],
@@ -877,7 +877,7 @@ export const getMessage = async (req, res) => {
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente del sitio web en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}.`}]},
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial.`}]},
                                         ...context,
                                         {"role": "user", "content": [{"type": "text", "text": message}]}
                                     ],
