@@ -52,7 +52,7 @@ export const getMessagesInstagram = async (req, res) => {
 export const createMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
-        if (integration.messengerToken && integration.messengerToken !== '') {
+        if (integration.instagramToken && integration.instagramToken !== '') {
             await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                 "recipient": {
                     "id": req.body.instagramId
