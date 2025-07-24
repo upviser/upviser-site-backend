@@ -1028,7 +1028,7 @@ export const callbackFacebook = async (req, res) => {
             await newIntegration.save()
         }
     
-        res.status(200).json({ success: 'OK' });
+        res.status(200).json({ success: 'Conectado correctamente, hacer clic en "Probar conexión" o recargar la pagina del panel administrativo para verificarlo.' });
     } catch (error) {
         console.log(error.response.data)
         return res.status(500).json({message: error.message})
