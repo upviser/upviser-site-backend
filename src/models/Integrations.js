@@ -10,7 +10,11 @@ const IntegrationsSchema = new mongoose.Schema({
     instagramToken: { type: String },
     apiToken: { type: String },
     apiPixelId: { type: String },
-    googleAnalytics: { type: String }
+    googleAnalytics: { type: String },
+    zoomAccountId: { type: String },
+    zoomToken: { type: String },
+    zoomExpiresIn: { type: Number },
+    zoomCreateToken: { type: Date }
 }, {
     timestamps: true
 })

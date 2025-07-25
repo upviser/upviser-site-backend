@@ -61,9 +61,9 @@ export const deleteCalendar = async (req, res) => {
 export const CreateMeeting = async (req, res) => {
     try {
         if (req.body.type === 'Llamada por Zoom') {
-            const zoom = await Zoom.findOne();
+            const integrations = await Integrations.findOne();
             let token
-            if (!zoom || isTokenExpired(zoom.createdAt, zoom.expires_in)) {
+            if (isTokenExpired(integrations.zoomCreateToken, integrations.zoomExpiresIn)) {
                 const response = await axios.post('https://zoom.us/oauth/token', null, {
                     headers: {
                         'Authorization': `Basic ${Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64')}`,
@@ -71,18 +71,13 @@ export const CreateMeeting = async (req, res) => {
                     },
                     params: {
                         "grant_type": "account_credentials",
-                        "account_id": process.env.ZOOM_ACCOUNT_ID
+                        "account_id": integrations.zoomAccountId
                     }
                 })
                 token = response.data.access_token
-                if (zoom) {
-                    await Zoom.findByIdAndUpdate(zoom._id, response.data, { new: true })
-                } else {
-                    const newToken = new Zoom(response.data)
-                    await newToken.save()
-                }
+                await Integrations.findByIdAndUpdate(integrations._id, { zoomToken: token, zoomExpiresIn: response.data.expires_in, zoomCreateToken: new Date() }, { new: true })
             } else {
-                token = zoom.access_token
+                token = integrations.zoomToken
             }
             const meetingData = {
                 topic: req.body.call,
@@ -95,7 +90,6 @@ export const CreateMeeting = async (req, res) => {
                     'Authorization': `Bearer ${token}`,
                 },
             }).catch(error => console.log(error))
-            const integrations = await Integrations.findOne().lean()
             if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
                 const Content = bizSdk.Content
                 const CustomData = bizSdk.CustomData

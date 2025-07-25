@@ -5,7 +5,8 @@ const UserSchema = new mongoose.Schema({
     api: { type: String },
     idNumber: { type: String },
     idPage: { type: String },
-    idInstagram: { type: String }
+    idInstagram: { type: String },
+    zoomState: { type: String } 
 }, {
     timestamps: true
 })
