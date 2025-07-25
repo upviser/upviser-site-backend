@@ -1008,10 +1008,11 @@ export const callbackFacebook = async (req, res) => {
         );
 
         if (state) {
-            const payload = jwt.verify(state, process.env.JWT_SECRET)
-            if (payload.exp < Date.now()) throw new Error('State expirado')
-            await axios.post(`${payload.api}/integrations`, { instagramToken: longLivedAccessToken, idInstagram: instagramBusinessAccountId })
-            return res.status(200).json({ success: 'OK' });
+            const user = await User.findOne({ instagramState: state }).lean()
+            if (user) {
+                await axios.post(`${user.api}/integrations`, { instagramToken: longLivedAccessToken, idInstagram: instagramBusinessAccountId })
+                return res.status(200).json({ success: 'OK' });
+            }
         }
 
         const integrations = await Integration.findOne().lean();

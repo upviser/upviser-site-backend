@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
     idNumber: { type: String },
     idPage: { type: String },
     idInstagram: { type: String },
+    instagramState: { type: String },
     zoomState: { type: String } 
 }, {
     timestamps: true
