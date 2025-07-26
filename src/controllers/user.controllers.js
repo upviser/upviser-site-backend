@@ -2,7 +2,7 @@ import User from '../models/User.js'
 
 export const createUser = async (req, res) => {
     try {
-        const user = await User.findOne({ email: req.body.email }).lean()
+        const user = await User.findOne({ api: req.body.api }).lean()
         if (user) {
             const userUpdate = await User.findByIdAndUpdate(user._id, req.body, { new: true })
             return res.json(userUpdate)
