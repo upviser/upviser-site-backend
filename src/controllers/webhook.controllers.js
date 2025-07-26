@@ -327,6 +327,7 @@ export const getMessage = async (req, res) => {
                 const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
+                    return res.json({ success: 'OK' })
                 } else {
                     return res.json({ message: 'Error: No existe cliente con este id.' })
                 }
@@ -937,6 +938,7 @@ export const getMessage = async (req, res) => {
                 }).lean();
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
+                    return res.json({ success: 'OK' })
                 } else {
                     return res.json({ message: 'Error: No existe cliente con este id.' })
                 }
