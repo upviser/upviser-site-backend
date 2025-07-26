@@ -1011,6 +1011,7 @@ export const callbackFacebook = async (req, res) => {
             const user = await User.findOne({ instagramState: state }).lean()
             if (user) {
                 await axios.post(`${user.api}/integrations`, { instagramToken: longLivedAccessToken, idInstagram: instagramBusinessAccountId })
+                await User.findByIdAndUpdate(user._id, { idInstagram: instagramBusinessAccountId })
                 return res.status(200).json({ success: 'OK' });
             }
         }
