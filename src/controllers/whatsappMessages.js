@@ -1,6 +1,7 @@
 import WhatsappChat from '../models/WhatsappChat.js'
 import axios from "axios"
 import Integration from '../models/Integrations.js'
+import ShopLogin from '../models/ShopLogin.js'
 
 export const getPhones = async (req, res) => {
     try {

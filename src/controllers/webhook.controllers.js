@@ -324,7 +324,7 @@ export const getMessage = async (req, res) => {
                     return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
-                const user = await User.findOne({ idNumber: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
+                const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
                 } else {
