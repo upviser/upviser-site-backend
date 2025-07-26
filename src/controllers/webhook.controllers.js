@@ -934,8 +934,8 @@ export const getMessage = async (req, res) => {
                 console.log('otro usuario')
                 const user = await User.findOne({
                     $or: [
-                        { idPage: id },
-                        { idInstagram: id }
+                        { idPage: req.body.entry[0].id },
+                        { idInstagram: req.body.entry[0].id }
                     ]
                 }).lean();
                 console.log(user)
