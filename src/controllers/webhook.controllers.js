@@ -34,10 +34,8 @@ export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
-        console.log(req.body.entry[0].changes)
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
-            console.log('mensaje whatsapp')
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
                 const message = req.body.entry[0].changes[0].value.messages[0].text.body
                 const number = req.body.entry[0].changes[0].value.messages[0].from
@@ -326,9 +324,7 @@ export const getMessage = async (req, res) => {
                     return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
-                console.log('otro usuario')
                 const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
-                console.log(user)
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
                     return res.json({ success: 'OK' })
