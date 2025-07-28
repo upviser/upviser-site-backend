@@ -34,6 +34,7 @@ export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
+        console.log(req.body)
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
@@ -333,6 +334,7 @@ export const getMessage = async (req, res) => {
                 }
             }
         } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
+            console.log('messenger o instagram')
             if (req.body.entry[0].id === integration.idPage || req.body.entry[0].id === integration.idInstagram) {
                 if (req.body.entry[0].id === integration.idPage) {
                     const message = req.body.entry[0].messaging[0].message.text
@@ -930,6 +932,7 @@ export const getMessage = async (req, res) => {
                     }
                 }
             } else {
+                console.log('otra cuenta')
                 const user = await User.findOne({
                     $or: [
                         { idPage: req.body.entry[0].id },
@@ -937,6 +940,7 @@ export const getMessage = async (req, res) => {
                     ]
                 }).lean();
                 if (user) {
+                    console.log(user)
                     await axios.post(`${user.api}/webhook`, req.body)
                     return res.json({ success: 'OK' })
                 } else {
