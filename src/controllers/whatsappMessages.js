@@ -94,8 +94,6 @@ export const whatsappToken = async (req, res) => {
   try {
     const { code, phone_number_id, waba_id } = req.body
 
-    console.log(req.body)
-
     const tokenRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
       params: {
         client_id: process.env.FB_APP_ID,
@@ -103,8 +101,6 @@ export const whatsappToken = async (req, res) => {
         code,
       },
     });
-
-    console.log(tokenRes.data)
 
     const { access_token } = tokenRes.data;
 
@@ -117,8 +113,6 @@ export const whatsappToken = async (req, res) => {
         }
     });
 
-    console.log(longLivedRes.data)
-
     const longLivedToken = longLivedRes.data.access_token;
 
     await axios.post(`https://graph.facebook.com/v20.0/${waba_id}/subscribed_apps`, null, {
@@ -129,7 +123,7 @@ export const whatsappToken = async (req, res) => {
 
     if (user) {
         await axios.post(`${user.api}/integrations`, { whatsappToken: longLivedToken, idPhone: phone_number_id, waba: waba_id })
-        await axios.post(`${process.env.MAIN_API_URL}/user`, { api: process.env.API_URL, idPhone: phone_number_id })
+        await axios.post(`${process.env.API_URL}/user`, { api: process.env.API_URL, idPhone: phone_number_id })
     } else {
         const integrations = await Integration.findOne().lean();
         await Integration.findByIdAndUpdate(integrations._id, {
