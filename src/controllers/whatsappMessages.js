@@ -2,6 +2,7 @@ import WhatsappChat from '../models/WhatsappChat.js'
 import axios from "axios"
 import Integration from '../models/Integrations.js'
 import ShopLogin from '../models/ShopLogin.js'
+import User from '../models/User.js'
 
 export const getPhones = async (req, res) => {
     try {
@@ -93,6 +94,8 @@ export const whatsappToken = async (req, res) => {
   try {
     const { code, phone_number_id, waba_id } = req.body
 
+    console.log(req.body)
+
     const tokenRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
       params: {
         client_id: process.env.FB_APP_ID,
@@ -101,6 +104,8 @@ export const whatsappToken = async (req, res) => {
         code,
       },
     });
+
+    console.log(tokenRes.data)
 
     const { access_token } = tokenRes.data;
 
@@ -113,22 +118,31 @@ export const whatsappToken = async (req, res) => {
         }
     });
 
+    console.log(longLivedRes.data)
+
     const longLivedToken = longLivedRes.data.access_token;
 
     await axios.post(`https://graph.facebook.com/v20.0/${waba_id}/subscribed_apps`, null, {
       params: { access_token: longLivedToken },
     });
 
-    const integrations = await Integration.findOne().lean();
-    await Integration.findByIdAndUpdate(integrations._id, {
-      whatsappToken: longLivedToken,
-      idPhone: phone_number_id,
-      waba: waba_id
-    }, { new: true });
+    const user = await User.findOne({ idPhone: phone_number_id }).lean()
+
+    if (user) {
+        await axios.post(`${user.api}/integrations`, { whatsappToken: longLivedToken, idPhone: phone_number_id, waba: waba_id })
+        await axios.post(`${process.env.MAIN_API_URL}/user`, { api: process.env.API_URL, idPhone: phone_number_id })
+    } else {
+        const integrations = await Integration.findOne().lean();
+        await Integration.findByIdAndUpdate(integrations._id, {
+            whatsappToken: longLivedToken,
+            idPhone: phone_number_id,
+            waba: waba_id
+        }, { new: true });
+    }
 
     res.status(200).json({ success: 'OK' });
   } catch (error) {
-    console.error(error);
+    console.error(error.response.data);
     res.status(500).json({ message: error.message });
   }
 };
