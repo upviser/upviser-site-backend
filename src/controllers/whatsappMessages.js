@@ -104,19 +104,27 @@ export const whatsappToken = async (req, res) => {
 
     const { access_token } = tokenRes.data;
 
+    const longLivedRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+        params: {
+            grant_type: 'fb_exchange_token',
+            client_id: process.env.FB_APP_ID,
+            client_secret: process.env.FB_APP_SECRET,
+            fb_exchange_token: access_token, // token corto recién obtenido
+        }
+    });
+
+    const longLivedToken = longLivedRes.data.access_token;
+
     await axios.post(`https://graph.facebook.com/v20.0/${waba_id}/subscribed_apps`, null, {
-      params: { access_token },
+      params: { access_token: longLivedToken },
     });
 
     const integrations = await Integration.findOne().lean();
     await Integration.findByIdAndUpdate(integrations._id, {
-      whatsappToken: access_token,
+      whatsappToken: longLivedToken,
       idPhone: phone_number_id,
       waba: waba_id
     }, { new: true });
-
-    const shopLogin = await ShopLogin.findOne({ type: 'Administrador' }).lean()
-    await axios.post(`${process.env.MAIN_API_URL}/user`, { email: shopLogin.email, api: process.env.NEXT_PUBLIC_API_URL, idPhone: phone_number_id })
 
     res.status(200).json({ success: 'OK' });
   } catch (error) {
