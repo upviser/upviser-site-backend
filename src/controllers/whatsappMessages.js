@@ -123,7 +123,7 @@ export const whatsappToken = async (req, res) => {
 
     if (user) {
         await axios.post(`${user.api}/integrations`, { whatsappToken: longLivedToken, idPhone: phone_number_id, waba: waba_id })
-        await axios.post(`${process.env.API_URL}/user`, { api: process.env.API_URL, idPhone: phone_number_id })
+        await axios.post(`${process.env.API_URL}/user`, { api: user.api, idPhone: phone_number_id })
     } else {
         const integrations = await Integration.findOne().lean();
         await Integration.findByIdAndUpdate(integrations._id, {
