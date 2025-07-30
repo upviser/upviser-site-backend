@@ -1015,7 +1015,7 @@ export const callbackFacebook = async (req, res) => {
             if (user) {
                 await axios.post(`${user.api}/integrations`, { instagramToken: longLivedAccessToken, idInstagram: instagramBusinessAccountId })
                 await User.findByIdAndUpdate(user._id, { idInstagram: instagramBusinessAccountId })
-                return res.redirect(`${process.env.ADMIN_URL}/instagram-oauth-success?status=ok`)
+                return res.redirect(`${user.admin}/instagram-oauth-success?status=ok`)
             }
         }
 
