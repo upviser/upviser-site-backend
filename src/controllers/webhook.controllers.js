@@ -970,6 +970,7 @@ export const callbackFacebook = async (req, res) => {
         );
 
         const { access_token, user_id } = response.data;
+        console.log(response.data)
 
         // Intercambiar el token de corta duración por uno de larga duración
         const longLivedTokenResponse = await axios.get(
@@ -997,6 +998,8 @@ export const callbackFacebook = async (req, res) => {
         );
 
         const { user_id: instagramBusinessAccountId } = accountResponse.data;
+
+        console.log(instagramBusinessAccountId)
 
         // Suscribirse al webhook de mensajes
         await axios.post(
