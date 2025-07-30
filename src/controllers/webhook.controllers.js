@@ -1015,7 +1015,7 @@ export const callbackFacebook = async (req, res) => {
             if (user) {
                 await axios.post(`${user.api}/integrations`, { instagramToken: longLivedAccessToken, idInstagram: instagramBusinessAccountId })
                 await User.findByIdAndUpdate(user._id, { idInstagram: instagramBusinessAccountId })
-                return res.status(200).json({ success: 'OK' });
+                return res.redirect(`${process.env.ADMIN_URL}/instagram-oauth-success?status=ok`)
             }
         }
 
@@ -1033,7 +1033,7 @@ export const callbackFacebook = async (req, res) => {
             await newIntegration.save()
         }
     
-        res.status(200).json({ success: 'Conectado correctamente, hacer clic en "Probar conexión" o recargar la pagina del panel administrativo para verificarlo.' });
+        return res.redirect(`${process.env.ADMIN_URL}/instagram-oauth-success?status=ok`)
     } catch (error) {
         console.log(error.response.data)
         return res.status(500).json({message: error.message})
