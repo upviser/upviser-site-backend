@@ -71,6 +71,6 @@ export const zoomCallback = async (req, res) => {
     res.json({ success: 'OK' });
   } catch (err) {
     console.error(err.response?.data || err);
-    res.status(500).send('Error al obtener tokens o info de usuario.');
+    res.status(500).send(err.response?.data || err);
   }
 }
