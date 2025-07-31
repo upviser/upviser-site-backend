@@ -1,6 +1,7 @@
 import axios from 'axios'
 import Integrations from '../models/Integrations.js'
 import User from '../models/User.js'
+import qs from 'qs';
 
 export const createToken = async (req, res) => {
     try {
