@@ -51,6 +51,8 @@ export const zoomCallback = async (req, res) => {
         }
       }
     );
+    
+    console.log(tokenResp.data)
 
     const { access_token, expires_in } = tokenResp.data;
 
@@ -58,6 +60,8 @@ export const zoomCallback = async (req, res) => {
     const userResp = await axios.get('https://api.zoom.us/v2/users/me', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
+
+    console.log(userResp.data)
 
     const { account_id: zoomAccountId } = userResp.data;
 
