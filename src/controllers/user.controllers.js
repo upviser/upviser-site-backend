@@ -24,3 +24,12 @@ export const getUser = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const getUsers = async (req, res) => {
+    try {
+        const users = await User.find().lean()
+        return res.json(users)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}

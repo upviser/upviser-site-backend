@@ -7,4 +7,6 @@ router.post('/user', createUser)
 
 router.get('/user-api/:api', getUser)
 
+router.get('/users', )
+
 export default router

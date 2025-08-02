@@ -9,7 +9,6 @@ const ShopLoginSchema = new mongoose.Schema({
     plan: { type: String },
     imagesAI: { type: Number },
     videosAI: { type: Number },
-    textAI: { type: Number },
     conversationsAI: { type: Number },
     emails: { type: Number }
 }, {
