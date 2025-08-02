@@ -14,6 +14,7 @@ const IntegrationsSchema = new mongoose.Schema({
     googleAnalytics: { type: String },
     zoomAccountId: { type: String },
     zoomToken: { type: String },
+    zoomRefreshToken: { type: String },
     zoomExpiresIn: { type: Number },
     zoomCreateToken: { type: Date }
 }, {

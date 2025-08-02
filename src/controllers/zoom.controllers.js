@@ -6,17 +6,16 @@ import qs from 'qs';
 export const createToken = async (req, res) => {
     try {
         const integrations = await Integrations.findOne().lean()
-        const response = await axios.post('https://zoom.us/oauth/token', null, {
+        const response = await axios.post('https://zoom.us/oauth/token', qs.stringify({
+          grant_type: 'refresh_token',
+          refresh_token: integrations.zoomRefreshToken
+        }), {
             headers: {
                 'Authorization': `Basic ${Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64')}`,
                 'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            params: {
-                "grant_type": "account_credentials",
-                "account_id": integrations.zoomAccountId
             }
         })
-        await Integrations.findByIdAndUpdate(integrations._id, { zoomToken: response.data.access_token, zoomExpiresIn: response.data.expires_in, zoomCreateToken: new Date() })
+        await Integrations.findByIdAndUpdate(integrations._id, { zoomToken: response.data.access_token, zoomRefreshToken: response.data.refresh_token, zoomExpiresIn: response.data.expires_in, zoomCreateToken: new Date() })
         return res.json(response.data)
     } catch (error) {
         return res.status(500).json({message: error.message})
@@ -52,25 +51,21 @@ export const zoomCallback = async (req, res) => {
         }
       }
     );
-    
-    console.log(tokenResp.data)
 
-    const { access_token, expires_in } = tokenResp.data;
+    const { access_token, refresh_token, expires_in } = tokenResp.data;
 
     // Obtener info de usuario conectado
     const userResp = await axios.get('https://api.zoom.us/v2/users/me', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
 
-    console.log(userResp.data)
-
     const { account_id: zoomAccountId } = userResp.data;
 
     if (state) {
         const user = await User.findOne({ state: state })
-        if (user) await axios.post(`${user.api}/integrations`, { zoomAccountId: zoomAccountId, zoomToken: access_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
+        if (user) await axios.post(`${user.api}/integrations`, { zoomAccountId: zoomAccountId, zoomToken: access_token, zoomRefreshToken: refresh_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
     } else {
-        await Integrations.findOneAndUpdate({ zoomAccountId: zoomAccountId, zoomToken: access_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
+        await Integrations.findOneAndUpdate({ zoomAccountId: zoomAccountId, zoomToken: access_token, zoomRefreshToken: refresh_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
     }
 
     res.json({ success: 'OK' });

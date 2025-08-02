@@ -64,18 +64,17 @@ export const CreateMeeting = async (req, res) => {
             const integrations = await Integrations.findOne();
             let token
             if (isTokenExpired(integrations.zoomCreateToken, integrations.zoomExpiresIn)) {
-                const response = await axios.post('https://zoom.us/oauth/token', null, {
+                const response = await axios.post('https://zoom.us/oauth/token', qs.stringify({
+                    grant_type: 'refresh_token',
+                    refresh_token: integrations.zoomRefreshToken
+                }), {
                     headers: {
                         'Authorization': `Basic ${Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64')}`,
                         'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    params: {
-                        "grant_type": "account_credentials",
-                        "account_id": integrations.zoomAccountId
                     }
                 })
                 token = response.data.access_token
-                await Integrations.findByIdAndUpdate(integrations._id, { zoomToken: token, zoomExpiresIn: response.data.expires_in, zoomCreateToken: new Date() }, { new: true })
+                await Integrations.findByIdAndUpdate(integrations._id, { zoomToken: token, zoomRefreshToken: response.data.refresh_token, zoomExpiresIn: response.data.expires_in, zoomCreateToken: new Date() }, { new: true })
             } else {
                 token = integrations.zoomToken
             }
