@@ -28,7 +28,8 @@ export const getUser = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find().lean()
-        return res.json(users)
+        const index = users.findIndex(user => !user.email || user.email === "")
+        return res.json({ index: index })
     } catch (error) {
         return res.status(500).json({message: error.message})
     }
