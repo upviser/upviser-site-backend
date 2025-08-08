@@ -15,7 +15,7 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
     let service
 
     if (pay?.email) {
-        service = services.find(service => service._id === pay.service)
+        service = services.find(service => service._id.toString() === pay.service)
     }
 
     let sendSmtpEmail = new brevo.SendSmtpEmail()
@@ -61,22 +61,26 @@ export const sendEmailBuyBrevo = async ({ storeData, style, sell, pay, services 
                                                 ${
                                                     sell?.email
                                                         ? `
-                                                            <div style="color: #2D2D2D;">
-                                                                ${sell.cart.map(product => {
-                                                                    return `
-                                                                        <div key={product._id} style="display: flex;">
-                                                                            <img src=${product.image} style="width: 100px; height: 100px; margin-right: 6px; border: 1px solid #B9B9B9; border-radius: 6px;" />
-                                                                            <div>
-                                                                                <p style="font-size: 16px;">${product.name}</p>
-                                                                                <p style="font-size: 16px;">Cantidad: ${product.quantity}</p>
-                                                                            </div>
-                                                                            <p style="font-size: 16px; margin-left: auto; margin-top: auto; margin-bottom: auto;">$${NumberFormat(product.price)}</p>
-                                                                        </div>
-                                                                    `
-                                                                })}
-                                                                <p style="font-size: 16px;">Envío: $${NumberFormat(sell.shipping)}</p>
-                                                                <p style="font-size: 16px;">Total: $${NumberFormat(sell.cart.reduce((prev, curr) => curr.price * curr.quantity + prev, 0) + Number(sell.shipping))}</p>
-                                                            </div>
+                                                            <tr>
+                                                                <td align="center" style="padding: 20px;">
+                                                                    <div style="color: #2D2D2D;">
+                                                                        ${sell.cart.map(product => {
+                                                                            return `
+                                                                                <div key={product._id} style="display: flex;">
+                                                                                    <img src=${product.image} style="width: 100px; height: 100px; margin-right: 6px; border: 1px solid #B9B9B9; border-radius: 6px;" />
+                                                                                    <div>
+                                                                                        <p style="font-size: 16px;">${product.name}</p>
+                                                                                        <p style="font-size: 16px;">Cantidad: ${product.quantity}</p>
+                                                                                    </div>
+                                                                                    <p style="font-size: 16px; margin-left: auto; margin-top: auto; margin-bottom: auto;">$${NumberFormat(product.price)}</p>
+                                                                                </div>
+                                                                            `
+                                                                        })}
+                                                                        <p style="font-size: 16px;">Envío: $${NumberFormat(sell.shipping)}</p>
+                                                                        <p style="font-size: 16px;">Total: $${NumberFormat(sell.cart.reduce((prev, curr) => curr.price * curr.quantity + prev, 0) + Number(sell.shipping))}</p>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
                                                         `
                                                         : `
                                                             <tr>

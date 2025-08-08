@@ -11,8 +11,8 @@ export const createSell = async (req, res) => {
     try {
         const {email, region, city, firstName, lastName, address, details, phone, coupon, cart, shipping, state, pay, total, fbp, fbc, shippingMethod, shippingState, subscription} = req.body
         const integrations = await Integrations.findOne().lean()
-        if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
-            if (state === 'Pago realizado') {
+        if (state === 'Pago realizado') {
+            if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
                 const phoneFormat = `56${phone}`
                 const CustomData = bizSdk.CustomData
                 const EventRequest = bizSdk.EventRequest
@@ -55,7 +55,12 @@ export const createSell = async (req, res) => {
                             console.error('Error: ', err)
                         }
                     )
-            } else if (state === 'Pedido realizado') {
+            }
+            const storeData = await StoreData.findOne().lean()
+            const style = await Style.findOne().lean()
+            sendEmailBuyBrevo({ sell: req.body, storeData: storeData, style: style })
+        } else if (state === 'Pedido realizado') {
+            if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
                 const phoneFormat = `56${phone}`
                 const CustomData = bizSdk.CustomData
                 const EventRequest = bizSdk.EventRequest
@@ -177,46 +182,49 @@ export const updateSell = async (req, res) => {
             await sendEmailBrevo({ subscribers: [{ firstName: sell.firstName, email: sell.email }], emailData: { affair: 'Tus productos ya se encuentran en camino', title: 'Tu compra ya esta en camino a tu hogar', paragraph: 'Hola, queriamos comentarte que ya hemos realizado el envio de los productos de tu compra.' } })
         }
         if (sell.state === 'Pago realizado') {
-            const CustomData = bizSdk.CustomData
-            const EventRequest = bizSdk.EventRequest
-            const UserData = bizSdk.UserData
-            const ServerEvent = bizSdk.ServerEvent
-            const access_token = process.env.APIFACEBOOK_TOKEN
-            const pixel_id = process.env.APIFACEBOOK_PIXELID
-            const api = bizSdk.FacebookAdsApi.init(access_token)
-            let current_timestamp = new Date()
-            const url = `${process.env.WEB_URL}/gracias-por-comprar/`
-            const userData = (new UserData())
-                .setFirstName(sell.firstName.toLowerCase())
-                .setLastName(sell.lastName.toLowerCase())
-                .setEmail(sell.email.toLowerCase())
-                .setPhone(sell.phone)
-                .setCity(sell.city.toLowerCase())
-                .setClientIpAddress(req.connection.remoteAddress)
-                .setClientUserAgent(req.headers['user-agent'])
-                .setFbp(fbp)
-                .setFbc(fbc)
-            const customData = (new CustomData())
-                .setCurrency('clp')
-                .setValue(sell.total)
-            const serverEvent = (new ServerEvent())
-                .setEventName('Pucharse')
-                .setEventTime(current_timestamp)
-                .setUserData(userData)
-                .setCustomData(customData)
-                .setEventSourceUrl(url)
-                .setActionSource('website')
-            const eventsData = [serverEvent]
-            const eventRequest = (new EventRequest(access_token, pixel_id))
-                .setEvents(eventsData)
-                eventRequest.execute().then(
-                    response => {
-                        console.log('Response: ', response)
-                    },
-                    err => {
-                        console.error('Error: ', err)
-                    }
-                )
+            const integrations = await Integrations.findOne().lean()
+            if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
+                const CustomData = bizSdk.CustomData
+                const EventRequest = bizSdk.EventRequest
+                const UserData = bizSdk.UserData
+                const ServerEvent = bizSdk.ServerEvent
+                const access_token = integrations.apiToken
+                const pixel_id = integrations.apiPixelId
+                const api = bizSdk.FacebookAdsApi.init(access_token)
+                let current_timestamp = new Date()
+                const url = `${process.env.WEB_URL}/gracias-por-comprar/`
+                const userData = (new UserData())
+                    .setFirstName(sell.firstName.toLowerCase())
+                    .setLastName(sell.lastName.toLowerCase())
+                    .setEmail(sell.email.toLowerCase())
+                    .setPhone(sell.phone)
+                    .setCity(sell.city.toLowerCase())
+                    .setClientIpAddress(req.connection.remoteAddress)
+                    .setClientUserAgent(req.headers['user-agent'])
+                    .setFbp(fbp)
+                    .setFbc(fbc)
+                const customData = (new CustomData())
+                    .setCurrency('clp')
+                    .setValue(sell.total)
+                const serverEvent = (new ServerEvent())
+                    .setEventName('Pucharse')
+                    .setEventTime(current_timestamp)
+                    .setUserData(userData)
+                    .setCustomData(customData)
+                    .setEventSourceUrl(url)
+                    .setActionSource('website')
+                const eventsData = [serverEvent]
+                const eventRequest = (new EventRequest(access_token, pixel_id))
+                    .setEvents(eventsData)
+                    eventRequest.execute().then(
+                        response => {
+                            console.log('Response: ', response)
+                        },
+                        err => {
+                            console.error('Error: ', err)
+                        }
+                    )
+            }
             const storeData = await StoreData.findOne().lean()
             const style = await Style.findOne().lean()
             sendEmailBuyBrevo({ sell: sell, storeData: storeData, style: style })
@@ -254,9 +262,52 @@ export const updatedSell = async (req, res) => {
                 }
             })
         } else if (req.body.state === 'Pago realizado') {
+            const integrations = await Integrations.findOne().lean()
+            if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
+                const CustomData = bizSdk.CustomData
+                const EventRequest = bizSdk.EventRequest
+                const UserData = bizSdk.UserData
+                const ServerEvent = bizSdk.ServerEvent
+                const access_token = integrations.apiToken
+                const pixel_id = integrations.apiPixelId
+                const api = bizSdk.FacebookAdsApi.init(access_token)
+                let current_timestamp = new Date()
+                const url = `${process.env.WEB_URL}/gracias-por-comprar/`
+                const userData = (new UserData())
+                    .setFirstName(updatedSell.firstName.toLowerCase())
+                    .setLastName(updatedSell.lastName.toLowerCase())
+                    .setEmail(updatedSell.email.toLowerCase())
+                    .setPhone(updatedSell.phone)
+                    .setCity(updatedSell.city.toLowerCase())
+                    .setClientIpAddress(req.connection.remoteAddress)
+                    .setClientUserAgent(req.headers['user-agent'])
+                    .setFbp(fbp)
+                    .setFbc(fbc)
+                const customData = (new CustomData())
+                    .setCurrency('clp')
+                    .setValue(updatedSell.total)
+                const serverEvent = (new ServerEvent())
+                    .setEventName('Pucharse')
+                    .setEventTime(current_timestamp)
+                    .setUserData(userData)
+                    .setCustomData(customData)
+                    .setEventSourceUrl(url)
+                    .setActionSource('website')
+                const eventsData = [serverEvent]
+                const eventRequest = (new EventRequest(access_token, pixel_id))
+                    .setEvents(eventsData)
+                    eventRequest.execute().then(
+                        response => {
+                            console.log('Response: ', response)
+                        },
+                        err => {
+                            console.error('Error: ', err)
+                        }
+                    )
+            }
             const storeData = await StoreData.findOne().lean()
             const style = await Style.findOne().lean()
-            sendEmailBuyBrevo({ sell: sell, storeData: storeData, style: style })
+            sendEmailBuyBrevo({ sell: updatedSell, storeData: storeData, style: style })
         }
         return res.send(updatedSell)
     } catch (error) {
