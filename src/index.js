@@ -58,6 +58,7 @@ import whatsappRoutes from './routes/whatsapp.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
 import notificationRoutes from './routes/notifications.routes.js'
 import userRoutes from './routes/user.routes.js'
+import cartRoutes from './routes/cart.routes.js'
 
 connectDB()
 
@@ -140,6 +141,7 @@ app.use(whatsappRoutes)
 app.use(webhookRoutes)
 app.use(notificationRoutes)
 app.use(userRoutes)
+app.use(cartRoutes)
 
 io.on('connection', async (socket) => {
     socket.on('message', async (message) => {
