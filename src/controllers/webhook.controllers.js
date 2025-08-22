@@ -34,7 +34,6 @@ export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
-        console.log('Nuevo mensaje')
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
@@ -171,7 +170,11 @@ export const getMessage = async (req, res) => {
                             information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
-                            const cart = await Cart.findOne({ phone: number }).lean()
+                            let cart
+                            cart = await Cart.findOne({ phone: number }).lean()
+                            if (!cart) {
+                                cart = { cart: [] }
+                            }
                             const CartSchema = z.object({
                                 cart: z.array(z.object({
                                     name: z.string(),
@@ -187,7 +190,7 @@ export const getMessage = async (req, res) => {
                             const act = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                    {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -226,20 +229,25 @@ export const getMessage = async (req, res) => {
                                     sku: matchedVariation?.sku || ''
                                 };
                             }).filter(Boolean);
-                            await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
+                            if (cart?.cart?.length) {
+                                await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
+                            } else {
+                                const newCart = new Cart({ phone: number }, { cart: enrichedCart })
+                                await newCart.save()
+                            }
                             if (act.output_parsed.ready) {
                                 await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                     "messaging_product": "whatsapp",
                                     "to": number,
                                     "type": "text",
-                                    "text": {"body": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`}
+                                    "text": {"body": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?phone=${number}`}
                                 }, {
                                     headers: {
                                         'Content-Type': 'application/json',
                                         "Authorization": `Bearer ${integration.whatsappToken}`
                                     }
                                 })
-                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`, agent: false, view: false, ready: true})
+                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?phone=${number}`, agent: false, view: false, ready: true})
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                             } else {
@@ -471,7 +479,11 @@ export const getMessage = async (req, res) => {
                                 information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
-                                const cart = await Cart.findOne({ phone: number }).lean()
+                                let cart
+                                cart = await Cart.findOne({ messengerId: sender }).lean()
+                                if (!cart) {
+                                    cart = { cart: [] }
+                                }
                                 const CartSchema = z.object({
                                     cart: z.array(z.object({
                                         name: z.string(),
@@ -487,7 +499,7 @@ export const getMessage = async (req, res) => {
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -526,7 +538,12 @@ export const getMessage = async (req, res) => {
                                         sku: matchedVariation?.sku || ''
                                     };
                                 }).filter(Boolean);
-                                await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
+                                if (cart?.cart?.length) {
+                                    await Cart.findOneAndUpdate({ messengerId: sender }, { cart: enrichedCart })
+                                } else {
+                                    const newCart = new Cart({ messengerId: sender }, { cart: enrichedCart })
+                                    await newCart.save()
+                                }
                                 if (act.output_parsed.ready) {
                                     await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                         "recipient": {
@@ -534,14 +551,14 @@ export const getMessage = async (req, res) => {
                                         },
                                         "messaging_type": "RESPONSE",
                                         "message": {
-                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`
+                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`
                                         }
                                     }, {
                                         headers: {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`, agent: false, view: false, ready: true})
+                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`, agent: false, view: false, ready: true})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                                 } else {
@@ -768,7 +785,11 @@ export const getMessage = async (req, res) => {
                                 information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
-                                const cart = await Cart.findOne({ phone: number }).lean()
+                                let cart
+                                cart = await Cart.findOne({ instagramId: sender }).lean()
+                                if (!cart) {
+                                    cart = { cart: [] }
+                                }
                                 const CartSchema = z.object({
                                     cart: z.array(z.object({
                                         name: z.string(),
@@ -784,7 +805,7 @@ export const getMessage = async (req, res) => {
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -823,14 +844,19 @@ export const getMessage = async (req, res) => {
                                         sku: matchedVariation?.sku || ''
                                     };
                                 }).filter(Boolean);
-                                await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
+                                if (cart?.cart?.length) {
+                                    await Cart.findOneAndUpdate({ instagramId: sender }, { cart: enrichedCart })
+                                } else {
+                                    const newCart = new Cart({ instagramId: sender }, { cart: enrichedCart })
+                                    await newCart.save()
+                                }
                                 if (act.output_parsed.ready) {
                                     await axios.post(`https://graph.instagram.com/v21.0/${integration.idInstagram}/messages`, {
                                         "recipient": {
                                             "id": sender
                                         },
                                         "message": {
-                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`
+                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`
                                         }
                                     }, {
                                         headers: {
@@ -838,7 +864,7 @@ export const getMessage = async (req, res) => {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra`, agent: false, view: false, ready: true})
+                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`, agent: false, view: false, ready: true})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                                 } else {
