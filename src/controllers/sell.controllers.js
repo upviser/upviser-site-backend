@@ -107,7 +107,8 @@ export const createSell = async (req, res) => {
         }
         const cuponUpper = coupon?.toUpperCase()
         const sells = await Sell.countDocuments()
-        const buyOrder = `BLASPOD-${1001 + Number(sells)}`
+        const storeData = await StoreData.findOne().lean()
+        const buyOrder = `${storeData.name.toUpperCase()}-${1001 + Number(sells)}`
         const newSell = new Sell({email, region, city, firstName: firstName[0].toUpperCase() + firstName.substring(1), lastName: lastName[0].toUpperCase() + lastName.substring(1), address, details, phone: phone, coupon: cuponUpper, cart, shipping, state, pay, total, shippingMethod, shippingState, buyOrder, subscription, shippingLabel: req.body.shippingLabel, number: req.body.number})
         const sellSave = await newSell.save()
         res.json(sellSave)
