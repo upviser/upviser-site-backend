@@ -155,18 +155,7 @@ export const getMessage = async (req, res) => {
                                 plans: cleanedPlans
                             };
                             });
-                            const serviceIds = services.map(s => s._id);
-                            const funnels = await Funnel.find({ service: { $in: serviceIds } }).lean();
-                            const cleanedFunnels = funnels.map(funnel => {
-                            const cleanedSteps = (funnel.steps || []).filter(step => step.design?.length > 0)
-                                .map(({ metaTitle, metaDescription, _id, createdAt, updatedAt, ...rest }) => rest);
-                            const { _id, createdAt, updatedAt, __v, ...restFunnel } = funnel;
-                            return {
-                                ...restFunnel,
-                                steps: cleanedSteps
-                            };
-                            });
-                            information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon ${process.env.WEB_URL}/(slug de la página)`;
+                            information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}.`;
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                             const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
@@ -464,18 +453,7 @@ export const getMessage = async (req, res) => {
                                     plans: cleanedPlans
                                 };
                                 });
-                                const serviceIds = services.map(s => s._id);
-                                const funnels = await Funnel.find({ service: { $in: serviceIds } }).lean();
-                                const cleanedFunnels = funnels.map(funnel => {
-                                const cleanedSteps = (funnel.steps || []).filter(step => step.design?.length > 0)
-                                    .map(({ metaTitle, metaDescription, _id, createdAt, updatedAt, ...rest }) => rest);
-                                const { _id, createdAt, updatedAt, __v, ...restFunnel } = funnel;
-                                return {
-                                    ...restFunnel,
-                                    steps: cleanedSteps
-                                };
-                                });
-                                information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon ${process.env.WEB_URL}/(slug de la página)`;
+                                information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}.`;
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
@@ -770,18 +748,7 @@ export const getMessage = async (req, res) => {
                                     plans: cleanedPlans
                                 };
                                 });
-                                const serviceIds = services.map(s => s._id);
-                                const funnels = await Funnel.find({ service: { $in: serviceIds } }).lean();
-                                const cleanedFunnels = funnels.map(funnel => {
-                                const cleanedSteps = (funnel.steps || []).filter(step => step.design?.length > 0)
-                                    .map(({ metaTitle, metaDescription, _id, createdAt, updatedAt, ...rest }) => rest);
-                                const { _id, createdAt, updatedAt, __v, ...restFunnel } = funnel;
-                                return {
-                                    ...restFunnel,
-                                    steps: cleanedSteps
-                                };
-                                });
-                                information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}. Embudos de ventas (relacionados con los servicios): ${JSON.stringify(cleanedFunnels)}. Si hay alguna página que aporte información, pon ${process.env.WEB_URL}/(slug de la página)`;
+                                information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}.`;
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
