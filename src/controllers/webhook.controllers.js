@@ -41,6 +41,9 @@ export const getMessage = async (req, res) => {
                 const number = req.body.entry[0].changes[0].value.messages[0].from
                 if (integration.whatsappToken && integration.whatsappToken !== '') {
                     const messages = await WhatsappMessage.find({phone: number}).select('-phone -_id').sort({ createdAt: -1 }).limit(2).lean()
+                    if (!messages.length) {
+                        await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
+                    }
                     if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                         const newMessage = new WhatsappMessage({phone: number, message: message, agent: true, view: false})
                         await newMessage.save()
@@ -344,6 +347,9 @@ export const getMessage = async (req, res) => {
                     const sender = req.body.entry[0].messaging[0].sender.id
                     if (integration.messengerToken) {
                         const messages = await MessengerMessage.find({messengerId: sender}).select('-messengerId -_id').sort({ createdAt: -1 }).limit(2).lean()
+                        if (!messages.length) {
+                            await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
+                        }
                         if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                             const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
                             await newMessage.save()
@@ -353,6 +359,7 @@ export const getMessage = async (req, res) => {
                             io.emit('newNotification')
                             return res.sendStatus(200)
                         } else {
+                            await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                             let products
                             const context = messages.flatMap(ult => {
@@ -646,6 +653,9 @@ export const getMessage = async (req, res) => {
                     const sender = req.body.entry[0].messaging[0].sender.id
                     if (integration.instagramToken) {
                         const messages = await InstagramMessage.find({instagramId: sender}).select('-instagramId -_id').sort({ createdAt: -1 }).limit(2).lean()
+                        if (!messages.length) {
+                            await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
+                        }
                         if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
                             const newMessage = new InstagramMessage({instagramId: sender, message: message, agent: true, view: false})
                             await newMessage.save()
@@ -655,6 +665,7 @@ export const getMessage = async (req, res) => {
                             io.emit('newNotification')
                             return res.sendStatus(200)
                         } else {
+                            await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                             let products
                             const context = messages.flatMap(ult => {

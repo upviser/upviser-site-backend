@@ -17,6 +17,9 @@ export const responseMessage = async (req, res) => {
         const message = req.body.message
         const senderId = req.body.senderId
         const messages = await ChatMessage.find({ senderId: senderId }).select('-senderId -_id -adminView -userView -agent').sort({ createdAt: -1 }).limit(2).lean();
+        if (!messages.length) {
+            await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
+        }
         if (!req.body.agent || shopLogin.conversationsAI < 1) {
             const newMessage = new ChatMessage({ senderId: senderId, message: message, agent: false, adminView: false, userView: true })
             await newMessage.save()
@@ -25,6 +28,7 @@ export const responseMessage = async (req, res) => {
             io.emit('newNotification')
             return res.send(newMessage)
         } else {
+            await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
             let products
             const context = messages.flatMap(ult => {
