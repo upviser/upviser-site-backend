@@ -173,7 +173,8 @@ export const getMessage = async (req, res) => {
                             let cart
                             cart = await Cart.findOne({ phone: number }).lean()
                             if (!cart) {
-                                cart = { cart: [] }
+                                const newCart = new Cart({ cart: [], phone: number })
+                                cart = await newCart.save()
                             }
                             const CartSchema = z.object({
                                 cart: z.array(z.object({
@@ -229,25 +230,20 @@ export const getMessage = async (req, res) => {
                                     sku: matchedVariation?.sku || ''
                                 };
                             }).filter(Boolean);
-                            if (cart?.cart?.length) {
-                                await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
-                            } else {
-                                const newCart = new Cart({ phone: number }, { cart: enrichedCart })
-                                await newCart.save()
-                            }
+                            await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
                             if (act.output_parsed.ready) {
                                 await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                     "messaging_product": "whatsapp",
                                     "to": number,
                                     "type": "text",
-                                    "text": {"body": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?phone=${number}`}
+                                    "text": {"body": `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}`}
                                 }, {
                                     headers: {
                                         'Content-Type': 'application/json',
                                         "Authorization": `Bearer ${integration.whatsappToken}`
                                     }
                                 })
-                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?phone=${number}`, agent: false, view: false, ready: true})
+                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}`, agent: false, view: false, ready: true})
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                             } else {
@@ -343,7 +339,7 @@ export const getMessage = async (req, res) => {
             }
         } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
             if (req.body.entry[0].id === integration.idPage || req.body.entry[0].id === integration.idInstagram) {
-                if (req.body.entry[0].id === integration.idPage) {
+                if (req.body.entry[0].messaging[0].recipient.id === integration.idPage) {
                     const message = req.body.entry[0].messaging[0].message.text
                     const sender = req.body.entry[0].messaging[0].sender.id
                     if (integration.messengerToken) {
@@ -482,7 +478,8 @@ export const getMessage = async (req, res) => {
                                 let cart
                                 cart = await Cart.findOne({ messengerId: sender }).lean()
                                 if (!cart) {
-                                    cart = { cart: [] }
+                                    const newCart = new Cart({ cart: [], messengerId: sender })
+                                    cart = await newCart.save()
                                 }
                                 const CartSchema = z.object({
                                     cart: z.array(z.object({
@@ -538,12 +535,7 @@ export const getMessage = async (req, res) => {
                                         sku: matchedVariation?.sku || ''
                                     };
                                 }).filter(Boolean);
-                                if (cart?.cart?.length) {
-                                    await Cart.findOneAndUpdate({ messengerId: sender }, { cart: enrichedCart })
-                                } else {
-                                    const newCart = new Cart({ messengerId: sender }, { cart: enrichedCart })
-                                    await newCart.save()
-                                }
+                                await Cart.findOneAndUpdate({ messengerId: sender }, { cart: enrichedCart })
                                 if (act.output_parsed.ready) {
                                     await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                         "recipient": {
@@ -551,14 +543,14 @@ export const getMessage = async (req, res) => {
                                         },
                                         "messaging_type": "RESPONSE",
                                         "message": {
-                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`
+                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`
                                         }
                                     }, {
                                         headers: {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`, agent: false, view: false, ready: true})
+                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`, agent: false, view: false, ready: true})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                                 } else {
@@ -649,7 +641,7 @@ export const getMessage = async (req, res) => {
                     } else {
                         return res.json({ message: 'Error: No existe el token de la app para Messenger' })
                     }
-                } else if (req.body.entry[0].id === integration.idInstagram) {
+                } else if (req.body.entry[0].messaging[0].recipient.id === integration.idInstagram) {
                     const message = req.body.entry[0].messaging[0].message.text
                     const sender = req.body.entry[0].messaging[0].sender.id
                     if (integration.instagramToken) {
@@ -788,7 +780,8 @@ export const getMessage = async (req, res) => {
                                 let cart
                                 cart = await Cart.findOne({ instagramId: sender }).lean()
                                 if (!cart) {
-                                    cart = { cart: [] }
+                                    const newCart = new Cart({ cart: [], instagramId: sender })
+                                    cart = await newCart.save()
                                 }
                                 const CartSchema = z.object({
                                     cart: z.array(z.object({
@@ -844,19 +837,14 @@ export const getMessage = async (req, res) => {
                                         sku: matchedVariation?.sku || ''
                                     };
                                 }).filter(Boolean);
-                                if (cart?.cart?.length) {
-                                    await Cart.findOneAndUpdate({ instagramId: sender }, { cart: enrichedCart })
-                                } else {
-                                    const newCart = new Cart({ instagramId: sender }, { cart: enrichedCart })
-                                    await newCart.save()
-                                }
+                                await Cart.findOneAndUpdate({ instagramId: sender }, { cart: enrichedCart })
                                 if (act.output_parsed.ready) {
                                     await axios.post(`https://graph.instagram.com/v21.0/${integration.idInstagram}/messages`, {
                                         "recipient": {
                                             "id": sender
                                         },
                                         "message": {
-                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`
+                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`
                                         }
                                     }, {
                                         headers: {
