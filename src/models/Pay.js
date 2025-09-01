@@ -14,7 +14,8 @@ const PaySchema = new mongoose.Schema({
     plan: { type: String },
     price: { type: Number },
     state: { type: String },
-    method: { type: String }
+    method: { type: String },
+    suscriptionId: { type: String }
 }, {
     timestamps: true
 })

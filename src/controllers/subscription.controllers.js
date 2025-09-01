@@ -1,4 +1,5 @@
 import bizSdk from 'facebook-nodejs-business-sdk'
+import Integrations from '../models/Integrations.js'
 
 export const createSubscription = async (req, res) => {
     try {
