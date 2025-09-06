@@ -36,7 +36,6 @@ export const getMessage = async (req, res) => {
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
-            console.log(req.body.entry[0].changes[0].value.metadata.phone_number_id)
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
                 const message = req.body.entry[0].changes[0].value.messages[0].text.body
                 const number = req.body.entry[0].changes[0].value.messages[0].from
@@ -322,10 +321,8 @@ export const getMessage = async (req, res) => {
                     return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
-                console.log('otra cuenta')
                 const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
                 if (user) {
-                    console.log('existe la cuenta')
                     await axios.post(`${user.api}/webhook`, req.body)
                     return res.json({ success: 'OK' })
                 } else {
@@ -1030,7 +1027,6 @@ export const callbackFacebook = async (req, res) => {
     
         return res.redirect(`${process.env.ADMIN_URL}/instagram-oauth-success?status=ok`)
     } catch (error) {
-        console.log(error.response.data)
         return res.status(500).json({message: error.message})
     }
 }
@@ -1052,14 +1048,12 @@ function parseSignedRequest(signedRequest) {
 
 export const deleteData = async (req, res) => {
     try {
-        console.log(req.body)
         const signedRequest = req.body.signed_request;
         const data = parseSignedRequest(signedRequest);
         if (!data || !data.user_id) {
             return res.status(400).send('Invalid request');
         }
         const userId = data.user_id;
-        console.log(userId)
         const integrations = await Integration.findOne({ $or: [{ idInstagram: userId }, { idPage: userId }, { idPhone: userId }] }).lean()
         if (integrations) {
             if (integrations.idInstagram === userId) {
