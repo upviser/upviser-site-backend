@@ -36,6 +36,7 @@ export const getMessage = async (req, res) => {
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
+            console.log(req.body.entry[0].changes[0].value.metadata.phone_number_id)
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
                 const message = req.body.entry[0].changes[0].value.messages[0].text.body
                 const number = req.body.entry[0].changes[0].value.messages[0].from
@@ -248,7 +249,7 @@ export const getMessage = async (req, res) => {
                                     ],
                                     response_format: {"type": "text"},
                                     temperature: 1,
-                                    max_completion_tokens: 2048,
+                                    max_completion_tokens: 100,
                                     top_p: 1,
                                     frequency_penalty: 0,
                                     presence_penalty: 0,
@@ -280,7 +281,7 @@ export const getMessage = async (req, res) => {
                                 ],
                                 response_format: {"type": "text"},
                                 temperature: 1,
-                                max_completion_tokens: 2048,
+                                max_completion_tokens: 100,
                                 top_p: 1,
                                 frequency_penalty: 0,
                                 presence_penalty: 0,
@@ -321,8 +322,10 @@ export const getMessage = async (req, res) => {
                     return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
+                console.log('otra cuenta')
                 const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
                 if (user) {
+                    console.log('existe la cuenta')
                     await axios.post(`${user.api}/webhook`, req.body)
                     return res.json({ success: 'OK' })
                 } else {
@@ -548,7 +551,7 @@ export const getMessage = async (req, res) => {
                                         ],
                                         response_format: {"type": "text"},
                                         temperature: 1,
-                                        max_completion_tokens: 2048,
+                                        max_completion_tokens: 100,
                                         top_p: 1,
                                         frequency_penalty: 0,
                                         presence_penalty: 0,
@@ -582,7 +585,7 @@ export const getMessage = async (req, res) => {
                                     ],
                                     response_format: {"type": "text"},
                                     temperature: 1,
-                                    max_completion_tokens: 2048,
+                                    max_completion_tokens: 100,
                                     top_p: 1,
                                     frequency_penalty: 0,
                                     presence_penalty: 0,
@@ -843,7 +846,7 @@ export const getMessage = async (req, res) => {
                                         ],
                                         response_format: {"type": "text"},
                                         temperature: 1,
-                                        max_completion_tokens: 2048,
+                                        max_completion_tokens: 100,
                                         top_p: 1,
                                         frequency_penalty: 0,
                                         presence_penalty: 0,
@@ -877,7 +880,7 @@ export const getMessage = async (req, res) => {
                                     ],
                                     response_format: {"type": "text"},
                                     temperature: 1,
-                                    max_completion_tokens: 2048,
+                                    max_completion_tokens: 100,
                                     top_p: 1,
                                     frequency_penalty: 0,
                                     presence_penalty: 0,
