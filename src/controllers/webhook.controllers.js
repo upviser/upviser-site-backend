@@ -196,10 +196,17 @@ export const getMessage = async (req, res) => {
                                 if (!product) return null
                                 let matchedVariation = null
                                 if (product.variations?.variations?.length) {
-                                    matchedVariation = product.variations.variations.find(v => {
+                                    matchedVariation = product.variations?.variations?.find(v => {
                                         const variationMatch = v.variation === item.variation?.variation;
-                                        const subVariationMatch = v.subVariation === item.variation?.subVariation || v.subVariation === undefined;
-                                        const subVariation2Match = v.subVariation2 === item.variation?.subVariation2 || v.subVariation2 === undefined;
+                                        const subVariationMatch =
+                                            !item.variation?.subVariation || item.variation?.subVariation === ""
+                                            ? true
+                                            : v.subVariation === item.variation.subVariation;
+
+                                        const subVariation2Match =
+                                            !item.variation?.subVariation2 || item.variation?.subVariation2 === ""
+                                            ? true
+                                            : v.subVariation2 === item.variation.subVariation2;
                                         return variationMatch && subVariationMatch && subVariation2Match;
                                     });
                                 }
@@ -494,10 +501,17 @@ export const getMessage = async (req, res) => {
                                     if (!product) return null
                                     let matchedVariation = null
                                     if (product.variations?.variations?.length) {
-                                        matchedVariation = product.variations.variations.find(v => {
+                                        matchedVariation = product.variations?.variations?.find(v => {
                                             const variationMatch = v.variation === item.variation?.variation;
-                                            const subVariationMatch = v.subVariation === item.variation?.subVariation || v.subVariation === undefined;
-                                            const subVariation2Match = v.subVariation2 === item.variation?.subVariation2 || v.subVariation2 === undefined;
+                                            const subVariationMatch =
+                                                !item.variation?.subVariation || item.variation?.subVariation === ""
+                                                ? true
+                                                : v.subVariation === item.variation.subVariation;
+
+                                            const subVariation2Match =
+                                                !item.variation?.subVariation2 || item.variation?.subVariation2 === ""
+                                                ? true
+                                                : v.subVariation2 === item.variation.subVariation2;
                                             return variationMatch && subVariationMatch && subVariation2Match;
                                         });
                                     }
@@ -789,10 +803,17 @@ export const getMessage = async (req, res) => {
                                     if (!product) return null
                                     let matchedVariation = null
                                     if (product.variations?.variations?.length) {
-                                        matchedVariation = product.variations.variations.find(v => {
+                                        matchedVariation = product.variations?.variations?.find(v => {
                                             const variationMatch = v.variation === item.variation?.variation;
-                                            const subVariationMatch = v.subVariation === item.variation?.subVariation || v.subVariation === undefined;
-                                            const subVariation2Match = v.subVariation2 === item.variation?.subVariation2 || v.subVariation2 === undefined;
+                                            const subVariationMatch =
+                                                !item.variation?.subVariation || item.variation?.subVariation === ""
+                                                ? true
+                                                : v.subVariation === item.variation.subVariation;
+
+                                            const subVariation2Match =
+                                                !item.variation?.subVariation2 || item.variation?.subVariation2 === ""
+                                                ? true
+                                                : v.subVariation2 === item.variation.subVariation2;
                                             return variationMatch && subVariationMatch && subVariation2Match;
                                         });
                                     }
