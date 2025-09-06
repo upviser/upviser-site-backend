@@ -23,7 +23,7 @@ export const createPay = async (req, res) => {
 export const createSuscribe = async (req, res) => {
     try {
         const paymentData = await Paym.findOne()
-        const client = new MercadoPagoConfig({ accessToken: paymentData.suscription.accessToken, options: { timeout: 5000 } });
+        const client = new MercadoPagoConfig({ accessToken: paymentData.mercadoPago.accessToken, options: { timeout: 5000 } });
         const preapproval = new PreApproval(client);
         const now = new Date();
         const startDate = new Date(now.getTime() + 2 * 60000)

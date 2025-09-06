@@ -3,7 +3,7 @@ import Paym from '../models/Payment.js'
 
 export const createOrder = async (req, res) => {
   const paymentData = await Paym.findOne()
-  const client = new MercadoPagoConfig({ accessToken: paymentData.mercadoPagoPro.accessToken });
+  const client = new MercadoPagoConfig({ accessToken: paymentData.mercadoPago.accessToken });
   const preference = new Preference(client);
 
   try {
