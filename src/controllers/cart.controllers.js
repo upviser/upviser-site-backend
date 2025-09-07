@@ -11,7 +11,7 @@ export const getCart = async (req, res) => {
         // Define dinámicamente el campo a usar en la consulta
         const filter = {
             $or: [
-                { number: id },
+                { phone: id },
                 { messengerId: id },
                 { instagramId: id }
             ]
