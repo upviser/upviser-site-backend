@@ -172,10 +172,10 @@ export const getMessage = async (req, res) => {
                                 cart: z.array(z.object({
                                     name: z.string(),
                                     variation: z.object({
-                                        variation: z.string(),
-                                        subVariation: z.string(),
-                                        subVariation2: z.string(),
-                                    }),
+                                        variation: z.string().meta({ description: "Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'" }),
+                                        subVariation: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                        subVariation2: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                    }).optional(),
                                     quantity: z.string()
                                 })),
                                 ready: z.boolean()
@@ -183,7 +183,7 @@ export const getMessage = async (req, res) => {
                             const act = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                    {"role": "system", "content": `Eres un agente IA que ayuda a usuarios a realizar su compra, este es el carrito actual ${JSON.stringify(cart?.cart)}, si el usuario esta listo para realizar la compra establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false. *Si el producto que esta añadiendo al carrito tiene variantes asegurate de que eligio cada nivel de variantes.`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -477,10 +477,10 @@ export const getMessage = async (req, res) => {
                                     cart: z.array(z.object({
                                         name: z.string(),
                                         variation: z.object({
-                                            variation: z.string(),
-                                            subVariation: z.string(),
-                                            subVariation2: z.string(),
-                                        }),
+                                            variation: z.string().meta({ description: "Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'" }),
+                                            subVariation: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                            subVariation2: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                        }).optional(),
                                         quantity: z.string()
                                     })),
                                     ready: z.boolean()
@@ -488,7 +488,7 @@ export const getMessage = async (req, res) => {
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                        {"role": "system", "content": `Eres un agente IA que ayuda a usuarios a realizar su compra, este es el carrito actual ${JSON.stringify(cart?.cart)}, si el usuario esta listo para realizar la compra establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false. *Si el producto que esta añadiendo al carrito tiene variantes asegurate de que eligio cada nivel de variantes.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -779,10 +779,10 @@ export const getMessage = async (req, res) => {
                                     cart: z.array(z.object({
                                         name: z.string(),
                                         variation: z.object({
-                                            variation: z.string(),
-                                            subVariation: z.string(),
-                                            subVariation2: z.string(),
-                                        }),
+                                            variation: z.string().meta({ description: "Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'" }),
+                                            subVariation: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                            subVariation2: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                        }).optional(),
                                         quantity: z.string()
                                     })),
                                     ready: z.boolean()
@@ -790,7 +790,7 @@ export const getMessage = async (req, res) => {
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                        {"role": "system", "content": `Eres un agente IA que ayuda a usuarios a realizar su compra, este es el carrito actual ${JSON.stringify(cart?.cart)}, si el usuario esta listo para realizar la compra establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false. *Si el producto que esta añadiendo al carrito tiene variantes asegurate de que eligio cada nivel de variantes.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
