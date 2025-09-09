@@ -172,9 +172,9 @@ export const getMessage = async (req, res) => {
                                 cart: z.array(z.object({
                                     name: z.string(),
                                     variation: z.object({
-                                        variation: z.string().meta({ description: "Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'" }),
-                                        subVariation: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
-                                        subVariation2: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                        variation: z.string().describe("Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'"),
+                                        subVariation: z.string().describe("Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional(),
+                                        subVariation2: z.string().describe("Tercer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional()
                                     }).optional(),
                                     quantity: z.string()
                                 })),
@@ -477,9 +477,9 @@ export const getMessage = async (req, res) => {
                                     cart: z.array(z.object({
                                         name: z.string(),
                                         variation: z.object({
-                                            variation: z.string().meta({ description: "Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'" }),
-                                            subVariation: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
-                                            subVariation2: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                            variation: z.string().describe("Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'"),
+                                            subVariation: z.string().describe("Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional(),
+                                            subVariation2: z.string().describe("Tercer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional()
                                         }).optional(),
                                         quantity: z.string()
                                     })),
@@ -779,9 +779,9 @@ export const getMessage = async (req, res) => {
                                     cart: z.array(z.object({
                                         name: z.string(),
                                         variation: z.object({
-                                            variation: z.string().meta({ description: "Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'" }),
-                                            subVariation: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
-                                            subVariation2: z.string().meta({ description: "Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica" }).optional(),
+                                            variation: z.string().describe("Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'"),
+                                            subVariation: z.string().describe("Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional(),
+                                            subVariation2: z.string().describe("Tercer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional()
                                         }).optional(),
                                         quantity: z.string()
                                     })),
