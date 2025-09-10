@@ -6,7 +6,7 @@ export const createVideo = async (req, res) => {
   try {
     const fileName = req.body.name || "video.mp4";
 
-    // 1. Crear el video en Bunny
+    // Crear el video
     const response = await axios.post(
       `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos`,
       { title: fileName },
@@ -21,33 +21,15 @@ export const createVideo = async (req, res) => {
 
     const guid = response.data.guid;
 
-    // 2. Generar un upload token
-    const tokenResponse = await axios.post(
-      `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${guid}/upload`,
-      {},
-      {
-        headers: {
-          accept: "application/json",
-          AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY,
-        },
-      }
-    );
-
-    const uploadToken = tokenResponse.data.token;
-
-    // 3. Enviar guid y token al cliente
+    // Devuelves guid y urls
     return res.json({
       guid,
-      uploadToken,
       uploadUrl: `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${guid}`,
       embedUrl: `https://iframe.mediadelivery.net/embed/${process.env.BUNNY_STREAM_LIBRARY}/${guid}`,
     });
   } catch (error) {
-    console.error("Error creando video en Bunny:", error.response?.data || error.message);
-    return res.status(500).json({
-        message: "Error al crear el video en BunnyCDN",
-        details: error.response?.data || error.message
-    });
+    console.error("Error creando video en BunnyCDN:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Error al crear el video en BunnyCDN" });
   }
 };
 
