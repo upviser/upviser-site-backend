@@ -80,12 +80,13 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions))
-app.use(express.json())
+app.use(express.json({ limit: '10gb' }))
+app.use(express.urlencoded({limit: '10gb', extended: false}))
 app.use(fileUpload({
     useTempFiles: true,
-    tempFileDir: './upload'
+    tempFileDir: './upload',
+    limits: { fileSize: 10 * 1024 * 1024 * 1024 }
 }))
-app.use(express.urlencoded({extended: false}))
 
 await loadTasks()
 
