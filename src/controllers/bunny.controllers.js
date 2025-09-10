@@ -44,7 +44,10 @@ export const createVideo = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creando video en Bunny:", error.response?.data || error.message);
-    return res.status(500).json({ message: "Error al crear el video en BunnyCDN" });
+    return res.status(500).json({
+        message: "Error al crear el video en BunnyCDN",
+        details: error.response?.data || error.message
+    });
   }
 };
 
