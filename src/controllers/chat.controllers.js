@@ -85,7 +85,7 @@ export const responseMessage = async (req, res) => {
                         category: product.category
                     }
                 })
-                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario quiere comprar un producto pon <a href="/tienda/(slug de la categoria)/(slug del producto)">(nombre del producto)</a>`
+                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon <a href="/tienda/(slug de la categoria)/(slug del producto)">(nombre del producto)</a> para que pueda ver fotos y más detalles del producto.`
             }
             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                 const politics = await Politics.find().lean()
@@ -130,10 +130,10 @@ export const responseMessage = async (req, res) => {
                     cart: z.array(z.object({
                         name: z.string(),
                         variation: z.object({
-                            variation: z.string().describe("Primer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'"),
-                            subVariation: z.string().describe("Segundo nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional(),
-                            subVariation2: z.string().describe("Tercer nivel de variación, ejemplo: color, talla, sabor, etc. Valor simple como 'rojo', 'M', 'vainilla'. Vacío si no aplica").optional()
-                        }).optional(),
+                            variation: z.string(),
+                            subVariation: z.string(),
+                            subVariation2: z.string()
+                        }),
                         quantity: z.string()
                     })),
                     ready: z.boolean()
@@ -141,7 +141,7 @@ export const responseMessage = async (req, res) => {
                 const act = await openai.responses.parse({
                     model: "gpt-4o-mini",
                     input: [
-                        {"role": "system", "content": `Eres un agente IA que ayuda a usuarios a realizar su compra, este es el carrito actual ${JSON.stringify(req.body.cart)}, si el usuario esta listo para realizar la compra establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false. *Si el producto que esta añadiendo al carrito tiene variantes asegurate de que eligio cada nivel de variantes.`},
+                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(req.body.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
                         ...conversation,
                         {"role": "user", "content": message}
                     ],
