@@ -3,56 +3,49 @@ import fs from 'fs-extra';
 import https from 'https'
 
 export const createVideo = async (req, res) => {
-    try {
-        if (!req.files || !req.files.video) {
-            return res.status(400).json({ message: 'No se ha cargado ningún video.' });
-        }
-        const filePath = req.files.video.tempFilePath;
-        const fileName = req.files.video.name;
-        let response;
-        try {
-            response = await axios.post(
-                `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos`,
-                { title: fileName },
-                {
-                    headers: {
-                        accept: 'application/json',
-                        'content-type': 'application/json',
-                        AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY
-                    }
-                }
-            );
-        } catch (error) {
-            console.error('Error creando video en BunnyCDN:', error.response ? error.response.data : error.message);
-            return res.status(500).json({ message: 'Error al crear el video en BunnyCDN', details: error.response ? error.response.data : error.message });
-        }
-        if (!response.data.guid) {
-            console.error('Respuesta inesperada al crear video:', response.data);
-            throw new Error('Error al crear el video en BunnyCDN');
-        }
-        let uploadResponse;
-        try {
-            uploadResponse = await axios({
-                method: 'PUT',
-                url: `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${response.data.guid}`,
-                headers: {
-                    accept: 'application/json',
-                    AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY,
-                    'Content-Type': 'application/octet-stream'
-                },
-                data: fs.createReadStream(filePath),
-                maxContentLength: Infinity,
-                maxBodyLength: Infinity
-            });
-        } catch (error) {
-            console.error('Error subiendo video a BunnyCDN:', error.response ? error.response.data : error.message);
-            return res.status(500).json({ message: 'Error al subir el video a BunnyCDN', details: error.response ? error.response.data : error.message });
-        }
-        await fs.remove(filePath)
-        return res.json(`https://iframe.mediadelivery.net/embed/${process.env.BUNNY_STREAM_LIBRARY}/${response.data.guid}`);
-    } catch (error) {
-        return res.status(500).json({message: error.message})
-    }
+  try {
+    const fileName = req.body.name || "video.mp4";
+
+    // 1. Crear el video en Bunny
+    const response = await axios.post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos`,
+      { title: fileName },
+      {
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY,
+        },
+      }
+    );
+
+    const guid = response.data.guid;
+
+    // 2. Generar un upload token
+    const tokenResponse = await axios.post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${guid}/upload`,
+      {},
+      {
+        headers: {
+          accept: "application/json",
+          AccessKey: process.env.BUNNY_STREAM_ACCESS_KEY,
+        },
+      }
+    );
+
+    const uploadToken = tokenResponse.data.token;
+
+    // 3. Enviar guid y token al cliente
+    return res.json({
+      guid,
+      uploadToken,
+      uploadUrl: `https://video.bunnycdn.com/library/${process.env.BUNNY_STREAM_LIBRARY}/videos/${guid}`,
+      embedUrl: `https://iframe.mediadelivery.net/embed/${process.env.BUNNY_STREAM_LIBRARY}/${guid}`,
+    });
+  } catch (error) {
+    console.error("Error creando video en Bunny:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Error al crear el video en BunnyCDN" });
+  }
 };
 
 export const uploadImage = async (req, res) => {
