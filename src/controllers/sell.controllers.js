@@ -11,6 +11,12 @@ export const createSell = async (req, res) => {
     try {
         const {email, region, city, firstName, lastName, address, details, phone, coupon, cart, shipping, state, pay, total, fbp, fbc, shippingMethod, shippingState, subscription} = req.body
         const integrations = await Integrations.findOne().lean()
+        const cuponUpper = coupon?.toUpperCase()
+        const sells = await Sell.countDocuments()
+        const storeData = await StoreData.findOne().lean()
+        const buyOrder = `${storeData.name.toUpperCase()}-${1001 + Number(sells)}`
+        const newSell = new Sell({email, region, city, firstName: firstName[0].toUpperCase() + firstName.substring(1), lastName: lastName[0].toUpperCase() + lastName.substring(1), address, details, phone: phone, coupon: cuponUpper, cart, shipping, state, pay, total, shippingMethod, shippingState, buyOrder, subscription, shippingLabel: req.body.shippingLabel, number: req.body.number})
+        const sellSave = await newSell.save()
         if (state === 'Pago realizado') {
             if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
                 const phoneFormat = `56${phone}`
@@ -59,6 +65,12 @@ export const createSell = async (req, res) => {
             const storeData = await StoreData.findOne().lean()
             const style = await Style.findOne().lean()
             sendEmailBuyBrevo({ sell: req.body, storeData: storeData, style: style })
+            const date = new Date()
+            date.setDate(date.getDate() + 10)
+            const cronExpression = formatDateToCron(date)
+            cron.schedule(cronExpression, () => {
+                sendEmailBrevo({ subscripbers: [{ firstName: firstName, email: email }], emailData: { affair: `{firstName} que te parecieron los productos que compraste en ${storeData.name}`, title: 'Deja tu comentario sobre que te parecieron los productos de tu compra', paragraph: 'Hola {firstName}, nos comunicamos contigo ya que nos gustaria saber que te parecieron los productos que compraste, si tocas el boton de abajo se te redirigira a una pagina en donde podras evaluar cada uno de los productos que compraste.', buttonText: 'Evaluar productos', url: `${process.env.WEB_URL}/evaluar-productos?sell=${sellSave._id}` }, storeData: storeData, style: style });
+            });
         } else if (state === 'Pedido realizado') {
             if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
                 const phoneFormat = `56${phone}`
@@ -105,12 +117,6 @@ export const createSell = async (req, res) => {
                     )
             }
         }
-        const cuponUpper = coupon?.toUpperCase()
-        const sells = await Sell.countDocuments()
-        const storeData = await StoreData.findOne().lean()
-        const buyOrder = `${storeData.name.toUpperCase()}-${1001 + Number(sells)}`
-        const newSell = new Sell({email, region, city, firstName: firstName[0].toUpperCase() + firstName.substring(1), lastName: lastName[0].toUpperCase() + lastName.substring(1), address, details, phone: phone, coupon: cuponUpper, cart, shipping, state, pay, total, shippingMethod, shippingState, buyOrder, subscription, shippingLabel: req.body.shippingLabel, number: req.body.number})
-        const sellSave = await newSell.save()
         res.json(sellSave)
         setTimeout(async () => {
             const sell = await Sell.findById(sellSave._id)
@@ -229,6 +235,12 @@ export const updateSell = async (req, res) => {
             const storeData = await StoreData.findOne().lean()
             const style = await Style.findOne().lean()
             sendEmailBuyBrevo({ sell: sell, storeData: storeData, style: style })
+            const date = new Date()
+            date.setDate(date.getDate() + 10)
+            const cronExpression = formatDateToCron(date)
+            cron.schedule(cronExpression, () => {
+                sendEmailBrevo({ subscripbers: [{ firstName: sell.firstName, email: sell.email }], emailData: { affair: `{firstName} que te parecieron los productos que compraste en ${storeData.name}`, title: 'Deja tu comentario sobre que te parecieron los productos de tu compra', paragraph: 'Hola {firstName}, nos comunicamos contigo ya que nos gustaria saber que te parecieron los productos que compraste, si tocas el boton de abajo se te redirigira a una pagina en donde podras evaluar cada uno de los productos que compraste.', buttonText: 'Evaluar productos', url: `${process.env.WEB_URL}/evaluar-productos?sell=${sell._id}` }, storeData: storeData, style: style });
+            });
         }
         return res.send(updateSell)
     } catch (error) {
@@ -309,6 +321,12 @@ export const updatedSell = async (req, res) => {
             const storeData = await StoreData.findOne().lean()
             const style = await Style.findOne().lean()
             sendEmailBuyBrevo({ sell: updatedSell, storeData: storeData, style: style })
+            const date = new Date()
+            date.setDate(date.getDate() + 10)
+            const cronExpression = formatDateToCron(date)
+            cron.schedule(cronExpression, () => {
+                sendEmailBrevo({ subscripbers: [{ firstName: updatedSell.firstName, email: updatedSell.email }], emailData: { affair: `{firstName} que te parecieron los productos que compraste en ${storeData.name}`, title: 'Deja tu comentario sobre que te parecieron los productos de tu compra', paragraph: 'Hola {firstName}, nos comunicamos contigo ya que nos gustaria saber que te parecieron los productos que compraste, si tocas el boton de abajo se te redirigira a una pagina en donde podras evaluar cada uno de los productos que compraste.', buttonText: 'Evaluar productos', url: `${process.env.WEB_URL}/evaluar-productos?sell=${updatedSell._id}` }, storeData: storeData, style: style });
+            });
         }
         return res.send(updatedSell)
     } catch (error) {
