@@ -107,3 +107,17 @@ export const getProductData = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const createReview = async (req, res) => {
+  try {
+    const productUpdate = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $push: { reviews: req.body } }, // 👈 agrega el nuevo review
+      { new: true }
+    )
+
+    return res.json(productUpdate)
+  } catch (error) {
+    return res.status(500).json({ message: error.message })
+  }
+}
