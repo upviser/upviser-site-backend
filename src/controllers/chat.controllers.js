@@ -10,6 +10,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import ShopLogin from '../models/ShopLogin.js'
 import { io } from '../index.js'
+import ChatTag from '../models/ChatTag.js'
 
 export const responseMessage = async (req, res) => {
     try {
@@ -322,6 +323,25 @@ export const viewUserMessage = async (req, res) => {
         ultimateMessage.userView = true
         const saveMessage = await ChatMessage.findByIdAndUpdate(ultimateMessage._id, ultimateMessage, { new: true })
         res.send(saveMessage)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
+export const getChatTags = async (req, res) => {
+    try {
+        const tags = await ChatTag.find().lean()
+        return res.json(tags)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
+export const createTag = async (req, res) => {
+    try {
+        const newTag = new ChatTag(req.body)
+        const newTagSave = await newTag.save()
+        return res.json(newTagSave)
     } catch (error) {
         return res.status(500).json({message: error.message})
     }

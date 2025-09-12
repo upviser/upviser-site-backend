@@ -4,6 +4,7 @@ import ClientTag from '../models/ClientTag.js'
 import ClientData from '../models/ClientData.js'
 import Service from '../models/Service.js'
 import Style from '../models/Style.js'
+import ChatTag from '../models/ChatTag.js'
 
 export const createDesign = async (req, res) => {
     try {
@@ -176,6 +177,14 @@ export const createDefaultPages = async (req, res) => {
         await newDataPhone.save()
         const newStyle = new Style({ design: 'Ninguno', form: 'Cuadradas', primary: '#2167e5', button: '#ffffff' })
         await newStyle.save()
+        const newChatTag1 = new ChatTag({ tag: 'Compra', color: '#00FF22' })
+        await newChatTag1.save()
+        const newChatTag2 = new ChatTag({ tag: 'Agente IA', color: '#003CFF' })
+        await newChatTag2.save()
+        const newChatTag3 = new ChatTag({ tag: 'Productos', color: '#8000FF' })
+        await newChatTag3.save()
+        const newChatTag4 = new ChatTag({ tag: 'Transferido', color: '#FF6200' })
+        await newChatTag4.save()
         return res.json(newDesignSave)
     } catch (error) {
         return res.status(500).json({message: error.message})
