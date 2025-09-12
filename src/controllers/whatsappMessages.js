@@ -29,7 +29,8 @@ export const getPhones = async (req, res) => {
                     agent: 1,
                     view: 1,
                     createdAt: 1,
-                    tag: 1
+                    tag: 1,
+                    message: 1
                 }
             }
         ]).exec((err, result) => {
