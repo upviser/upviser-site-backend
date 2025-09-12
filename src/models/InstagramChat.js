@@ -6,7 +6,8 @@ const InstagramMessageSchema = mongoose.Schema({
     response: { type: String },
     agent: { type: Boolean, required: true },
     view: { type: Boolean },
-    ready: { type: Boolean }
+    ready: { type: Boolean },
+    tag: { type: String }
 }, {
     timestamps: true
 })

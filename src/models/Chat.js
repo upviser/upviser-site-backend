@@ -7,7 +7,8 @@ const ChatSchema = mongoose.Schema({
     adminView: { type: Boolean },
     userView: { type: Boolean },
     agent: { type: Boolean },
-    ready: { type: Boolean }
+    ready: { type: Boolean },
+    tag: { type: String }
 }, {
     timestamps: true
 })

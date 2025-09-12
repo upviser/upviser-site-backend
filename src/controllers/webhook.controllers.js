@@ -45,7 +45,7 @@ export const getMessage = async (req, res) => {
                         await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                     }
                     if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
-                        const newMessage = new WhatsappMessage({phone: number, message: message, agent: true, view: false})
+                        const newMessage = new WhatsappMessage({phone: number, message: message, agent: true, view: false, tag: messages[0].tag})
                         await newMessage.save()
                         io.emit('whatsapp', newMessage)
                         const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
@@ -92,7 +92,7 @@ export const getMessage = async (req, res) => {
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
                             })
-                            const newMessage = new WhatsappMessage({ phone: number, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
+                            const newMessage = new WhatsappMessage({ phone: number, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false, tag: 'Transferido' })
                             await newMessage.save()
                             io.emit('whatsapp', newMessage)
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
@@ -242,7 +242,7 @@ export const getMessage = async (req, res) => {
                                         "Authorization": `Bearer ${integration.whatsappToken}`
                                     }
                                 })
-                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}`, agent: false, view: false, ready: true})
+                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}`, agent: false, view: false, ready: true, tag: 'Compra'})
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                             } else {
@@ -272,7 +272,7 @@ export const getMessage = async (req, res) => {
                                         "Authorization": `Bearer ${integration.whatsappToken}`
                                     }
                                 })
-                                const newMessage = new WhatsappMessage({phone: number, message: message, response: get.choices[0].message.content, agent: false, view: false})
+                                const newMessage = new WhatsappMessage({phone: number, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
@@ -304,7 +304,7 @@ export const getMessage = async (req, res) => {
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
                             }).catch((error) => console.log(error))
-                            const newMessage = new WhatsappMessage({phone: number, message: message, response: response.choices[0].message.content, agent: false, view: false})
+                            const newMessage = new WhatsappMessage({phone: number, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                             await newMessage.save()
                             return res.send(newMessage)
                         } else {
@@ -319,7 +319,7 @@ export const getMessage = async (req, res) => {
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
                             })
-                            const newMessage = new WhatsappMessage({phone: number, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false})
+                            const newMessage = new WhatsappMessage({phone: number, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false, tag: 'Agente IA'})
                             await newMessage.save()
                             return res.send(newMessage)
                         }
@@ -347,7 +347,7 @@ export const getMessage = async (req, res) => {
                             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                         }
                         if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
-                            const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false})
+                            const newMessage = new MessengerMessage({messengerId: sender, message: message, agent: true, view: false, tag: messages[0].tag})
                             await newMessage.save()
                             io.emit('messenger', newMessage)
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
@@ -397,7 +397,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false, tag: 'Transferido' })
                                 await newMessage.save()
                                 io.emit('messenger', newMessage)
                                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
@@ -549,7 +549,7 @@ export const getMessage = async (req, res) => {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`, agent: false, view: false, ready: true})
+                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`, agent: false, view: false, ready: true, tag: 'Compra'})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                                 } else {
@@ -581,7 +581,7 @@ export const getMessage = async (req, res) => {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false})
+                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                                 }
@@ -615,7 +615,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false})
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
                                 return res.send(newMessage)
                             } else {
@@ -632,7 +632,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false})
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
                                 return res.send(newMessage)
                             }
@@ -649,7 +649,7 @@ export const getMessage = async (req, res) => {
                             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                         }
                         if ((messages && messages.length && messages[0].agent) || shopLogin.conversationsAI < 1) {
-                            const newMessage = new InstagramMessage({instagramId: sender, message: message, agent: true, view: false})
+                            const newMessage = new InstagramMessage({instagramId: sender, message: message, agent: true, view: false, tag: messages[0].tag})
                             await newMessage.save()
                             io.emit('instagram', newMessage)
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
@@ -699,7 +699,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false })
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false, tag: 'Transferido' })
                                 await newMessage.save()
                                 io.emit('instagram', newMessage)
                                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
@@ -851,7 +851,7 @@ export const getMessage = async (req, res) => {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`, agent: false, view: false, ready: true})
+                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`, agent: false, view: false, ready: true, tag: 'Compra'})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                                 } else {
@@ -883,7 +883,7 @@ export const getMessage = async (req, res) => {
                                             'Content-Type': 'application/json'
                                         }
                                     })
-                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false})
+                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
                                     const newMessageSave = await newMessage.save()
                                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                                 }
@@ -917,7 +917,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 }).catch((error) => console.log(error.response.data))
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false})
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
                                 return res.send(newMessage)
                             } else {
@@ -934,7 +934,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false})
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
                                 return res.send(newMessage)
                             }

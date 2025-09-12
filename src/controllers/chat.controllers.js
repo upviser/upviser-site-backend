@@ -21,7 +21,7 @@ export const responseMessage = async (req, res) => {
             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
         }
         if (!req.body.agent || shopLogin.conversationsAI < 1) {
-            const newMessage = new ChatMessage({ senderId: senderId, message: message, agent: false, adminView: false, userView: true })
+            const newMessage = new ChatMessage({ senderId: senderId, message: message, agent: false, adminView: false, userView: true, tag: messages[0].tag })
             await newMessage.save()
             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje del chat', url: '/mensajes', view: false })
             await notification.save()
@@ -57,7 +57,7 @@ export const responseMessage = async (req, res) => {
             });
             let information = ''
             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
-                const newMessage = new ChatMessage({senderId: senderId, message: message, response: 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento', agent: false, adminView: false, userView: true})
+                const newMessage = new ChatMessage({senderId: senderId, message: message, response: 'Perfecto, te estoy transfieriendo con alguien de soporte en este momento', agent: false, adminView: false, userView: true, tag: 'Transferido'})
                 await newMessage.save()
                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje del chat', url: '/mensajes', view: false })
                 await notification.save()
@@ -188,7 +188,7 @@ export const responseMessage = async (req, res) => {
                     };
                 }).filter(Boolean);
                 if (act.output_parsed.ready) {
-                    const newMessage = new ChatMessage({senderId: senderId, message: message, response: 'Perfecto, para realizar tu compra toca en el boton de finalizar compra y seras redirigido al checkout', agent: true, adminView: false, userView: true, ready: true})
+                    const newMessage = new ChatMessage({senderId: senderId, message: message, response: 'Perfecto, para realizar tu compra toca en el boton de finalizar compra y seras redirigido al checkout', agent: true, adminView: false, userView: true, ready: true, tag: 'Compra'})
                     const newMessageSave = await newMessage.save()
                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
                 } else {
@@ -207,7 +207,7 @@ export const responseMessage = async (req, res) => {
                         presence_penalty: 0,
                         store: false
                     });
-                    const newMessage = new ChatMessage({senderId: senderId, message: message, response: get.choices[0].message.content, agent: true, adminView: false, userView: true})
+                    const newMessage = new ChatMessage({senderId: senderId, message: message, response: get.choices[0].message.content, agent: true, adminView: false, userView: true, tag: 'Productos'})
                     const newMessageSave = await newMessage.save()
                     return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                 }
@@ -228,11 +228,11 @@ export const responseMessage = async (req, res) => {
                     presence_penalty: 0,
                     store: false
                 });
-                const newMessage = new ChatMessage({senderId: senderId, message: message, response: response.choices[0].message.content, agent: true, adminView: false, userView: true})
+                const newMessage = new ChatMessage({senderId: senderId, message: message, response: response.choices[0].message.content, agent: true, adminView: false, userView: true, tag: 'Agente IA'})
                 await newMessage.save()
                 return res.send(newMessage)
             } else {
-                const newMessage = new ChatMessage({senderId: senderId, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, adminView: false, userView: true})
+                const newMessage = new ChatMessage({senderId: senderId, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, adminView: false, userView: true, tag: 'Agente IA'})
                 await newMessage.save()
                 return res.send(newMessage)
             }
