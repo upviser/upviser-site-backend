@@ -266,7 +266,8 @@ export const getIds = async (req, res) => {
                     senderId: 1,
                     agent: 1,
                     view: 1,
-                    createdAt: 1
+                    createdAt: 1,
+                    tag: 1
                 }
             }
         ]).exec((err, result) => {
