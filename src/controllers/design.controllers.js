@@ -177,7 +177,7 @@ export const createDefaultPages = async (req, res) => {
         await newDataPhone.save()
         const newStyle = new Style({ design: 'Ninguno', form: 'Cuadradas', primary: '#2167e5', button: '#ffffff' })
         await newStyle.save()
-        const newChatTag1 = new ChatTag({ tag: 'Compra', color: '#00FF22' })
+        const newChatTag1 = new ChatTag({ tag: 'Compra', color: '#00CE1B' })
         await newChatTag1.save()
         const newChatTag2 = new ChatTag({ tag: 'Agente IA', color: '#003CFF' })
         await newChatTag2.save()
