@@ -92,6 +92,19 @@ export const viewMessage = async (req, res) => {
     }
 }
 
+export const changeTag = async (req, res) => {
+    try {
+        const messages = await InstagramMessage.find({instagramId: req.params.id})
+        const reverseMessages = messages.reverse()
+        const ultimateMessage = reverseMessages[0]
+        ultimateMessage.tag = req.body.tag
+        const saveMessage = await InstagramMessage.findByIdAndUpdate(ultimateMessage._id, ultimateMessage, { new: true })
+        res.send(saveMessage)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
 export const deleteInstagram = async (req, res) => {
     try {
         const integrations = await Integration.findOne().lean()

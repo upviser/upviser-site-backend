@@ -328,6 +328,19 @@ export const viewUserMessage = async (req, res) => {
     }
 }
 
+export const changeTag = async (req, res) => {
+    try {
+        const messages = await ChatMessage.find({senderId: req.params.id})
+        const reverseMessages = messages.reverse()
+        const ultimateMessage = reverseMessages[0]
+        ultimateMessage.tag = req.body.tag
+        const saveMessage = await ChatMessage.findByIdAndUpdate(ultimateMessage._id, ultimateMessage, { new: true })
+        res.send(saveMessage)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
 export const getChatTags = async (req, res) => {
     try {
         const tags = await ChatTag.find().lean()

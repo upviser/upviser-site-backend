@@ -92,6 +92,19 @@ export const viewMessage = async (req, res) => {
     }
 }
 
+export const changeTag = async (req, res) => {
+    try {
+        const messages = await WhatsappChat.find({phone: req.params.id})
+        const reverseMessages = messages.reverse()
+        const ultimateMessage = reverseMessages[0]
+        ultimateMessage.tag = req.body.tag
+        const saveMessage = await WhatsappChat.findByIdAndUpdate(ultimateMessage._id, ultimateMessage, { new: true })
+        res.send(saveMessage)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
 export const whatsappToken = async (req, res) => {
   try {
     const { code, phone_number_id, waba_id } = req.body

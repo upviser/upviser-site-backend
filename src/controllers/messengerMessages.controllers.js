@@ -93,6 +93,19 @@ export const viewMessage = async (req, res) => {
     }
 }
 
+export const changeTag = async (req, res) => {
+    try {
+        const messages = await MessengerMessage.find({messengerId: req.params.id})
+        const reverseMessages = messages.reverse()
+        const ultimateMessage = reverseMessages[0]
+        ultimateMessage.tag = req.body.tag
+        const saveMessage = await MessengerMessage.findByIdAndUpdate(ultimateMessage._id, ultimateMessage, { new: true })
+        res.send(saveMessage)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
+
 export const MessengerToken = async (req, res) => {
   const { userToken } = req.body;
   if (!userToken) return res.status(400).json({ error: 'No se recibió token.' });
