@@ -121,7 +121,7 @@ export const getMessage = async (req, res) => {
                                     category: product.category
                                 }
                             })
-                            information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto.`
+                            information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                             const politics = await Politics.find().lean()
@@ -177,13 +177,12 @@ export const getMessage = async (req, res) => {
                                         subVariation2: z.string()
                                     }),
                                     quantity: z.string()
-                                })),
-                                ready: z.boolean()
+                                }))
                             });
                             const act = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                    {"role": "system", "content": `En base al carrito actual del usuario: ${JSON.stringify(cart?.cart)}, actualiza el carrito agregando, quitando o editando los productos que indique el usuario, puedes utilizar la información adicional disponible: ${information}.`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -192,7 +191,7 @@ export const getMessage = async (req, res) => {
                                 },
                             });
                             const enrichedCart = act.output_parsed.cart.map(item => {
-                                const product = products.find(p => p.name === item.name);
+                                const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
                                 if (!product) return null
                                 let matchedVariation = null
                                 if (product.variations?.variations?.length) {
@@ -230,52 +229,35 @@ export const getMessage = async (req, res) => {
                                 };
                             }).filter(Boolean);
                             await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
-                            if (act.output_parsed.ready) {
-                                await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
-                                    "messaging_product": "whatsapp",
-                                    "to": number,
-                                    "type": "text",
-                                    "text": {"body": `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}`}
-                                }, {
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        "Authorization": `Bearer ${integration.whatsappToken}`
-                                    }
-                                })
-                                const newMessage = new WhatsappMessage({phone: number, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}`, agent: false, view: false, ready: true, tag: 'Compra'})
-                                const newMessageSave = await newMessage.save()
-                                return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
-                            } else {
-                                const get = await openai.chat.completions.create({
-                                    model: "gpt-4o-mini",
-                                    messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información de este modelo: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}`}]},
-                                        ...context,
-                                        {"role": "user", "content": [{"type": "text", "text": message}]}
-                                    ],
-                                    response_format: {"type": "text"},
-                                    temperature: 1,
-                                    max_completion_tokens: 200,
-                                    top_p: 1,
-                                    frequency_penalty: 0,
-                                    presence_penalty: 0,
-                                    store: false
-                                });
-                                await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
-                                    "messaging_product": "whatsapp",
-                                    "to": number,
-                                    "type": "text",
-                                    "text": {"body": get.choices[0].message.content}
-                                }, {
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        "Authorization": `Bearer ${integration.whatsappToken}`
-                                    }
-                                })
-                                const newMessage = new WhatsappMessage({phone: number, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
-                                const newMessageSave = await newMessage.save()
-                                return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
-                            }
+                            const get = await openai.chat.completions.create({
+                                model: "gpt-4o-mini",
+                                messages: [
+                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información del carrito actual: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}. Si es usuario esta listo para pagar incluye este enlace ${domain.domain === 'upviser.cl' ? process.env.WEB_URL : `https://${domain.domain}`}/finalizar-compra?phone=${number}`}]},
+                                    ...context,
+                                    {"role": "user", "content": [{"type": "text", "text": message}]}
+                                ],
+                                response_format: {"type": "text"},
+                                temperature: 1,
+                                max_completion_tokens: 1048,
+                                top_p: 1,
+                                frequency_penalty: 0,
+                                presence_penalty: 0,
+                                store: false
+                            });
+                            await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
+                                "messaging_product": "whatsapp",
+                                "to": number,
+                                "type": "text",
+                                "text": {"body": get.choices[0].message.content}
+                            }, {
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    "Authorization": `Bearer ${integration.whatsappToken}`
+                                }
+                            })
+                            const newMessage = new WhatsappMessage({phone: number, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
+                            const newMessageSave = await newMessage.save()
+                            return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                         }
                         if (information !== '') {
                             const response = await openai.chat.completions.create({
@@ -426,7 +408,7 @@ export const getMessage = async (req, res) => {
                                         category: product.category
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto.`
+                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                                 const politics = await Politics.find().lean()
@@ -482,13 +464,12 @@ export const getMessage = async (req, res) => {
                                             subVariation2: z.string()
                                         }),
                                         quantity: z.string()
-                                    })),
-                                    ready: z.boolean()
+                                    }))
                                 });
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                        {"role": "system", "content": `En base al carrito actual del usuario: ${JSON.stringify(cart?.cart)}, actualiza el carrito agregando, quitando o editando los productos que indique el usuario, puedes utilizar la información adicional disponible: ${information}.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -497,7 +478,7 @@ export const getMessage = async (req, res) => {
                                     },
                                 });
                                 const enrichedCart = act.output_parsed.cart.map(item => {
-                                    const product = products.find(p => p.name === item.name);
+                                    const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
                                     if (!product) return null
                                     let matchedVariation = null
                                     if (product.variations?.variations?.length) {
@@ -535,56 +516,37 @@ export const getMessage = async (req, res) => {
                                     };
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ messengerId: sender }, { cart: enrichedCart })
-                                if (act.output_parsed.ready) {
-                                    await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
-                                        "recipient": {
-                                            "id": sender
-                                        },
-                                        "messaging_type": "RESPONSE",
-                                        "message": {
-                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`
-                                        }
-                                    }, {
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        }
-                                    })
-                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}`, agent: false, view: false, ready: true, tag: 'Compra'})
-                                    const newMessageSave = await newMessage.save()
-                                    return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
-                                } else {
-                                    const get = await openai.chat.completions.create({
-                                        model: "gpt-4o-mini",
-                                        messages: [
-                                            {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información de este modelo: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}`}]},
-                                            ...context,
-                                            {"role": "user", "content": [{"type": "text", "text": message}]}
-                                        ],
-                                        response_format: {"type": "text"},
-                                        temperature: 1,
-                                        max_completion_tokens: 200,
-                                        top_p: 1,
-                                        frequency_penalty: 0,
-                                        presence_penalty: 0,
-                                        store: false
-                                    });
-                                    await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
-                                        "recipient": {
-                                            "id": sender
-                                        },
-                                        "messaging_type": "RESPONSE",
-                                        "message": {
-                                            "text": get.choices[0].message.content
-                                        }
-                                    }, {
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        }
-                                    })
-                                    const newMessage = new MessengerMessage({messengerId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
-                                    const newMessageSave = await newMessage.save()
-                                    return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
-                                }
+                                const get = await openai.chat.completions.create({
+                                    model: "gpt-4o-mini",
+                                    messages: [
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información del carrito actual: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}. Si es usuario esta listo para pagar incluye este enlace ${domain.domain === 'upviser.cl' ? process.env.WEB_URL : `https://${domain.domain}`}/finalizar-compra?phone=${number}`}]},
+                                        ...context,
+                                        {"role": "user", "content": [{"type": "text", "text": message}]}
+                                    ],
+                                    response_format: {"type": "text"},
+                                    temperature: 1,
+                                    max_completion_tokens: 1048,
+                                    top_p: 1,
+                                    frequency_penalty: 0,
+                                    presence_penalty: 0,
+                                    store: false
+                                });
+                                await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                    "recipient": {
+                                        "id": sender
+                                    },
+                                    "messaging_type": "RESPONSE",
+                                    "message": {
+                                        "text": get.choices[0].message.content
+                                    }
+                                }, {
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
+                                const newMessageSave = await newMessage.save()
+                                return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
                             if (information !== '') {
                                 const response = await openai.chat.completions.create({
@@ -728,7 +690,7 @@ export const getMessage = async (req, res) => {
                                         category: product.category
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto.`
+                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                                 const politics = await Politics.find().lean()
@@ -784,13 +746,12 @@ export const getMessage = async (req, res) => {
                                             subVariation2: z.string()
                                         }),
                                         quantity: z.string()
-                                    })),
-                                    ready: z.boolean()
+                                    }))
                                 });
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `Evalúa si el usuario ya agrego todos los productos que necesita en base a el modelo de carrito ${JSON.stringify(cart?.cart)}, al historial de conversación y el último mensaje del usuario, si es asi establece 'ready' en true; de lo contrario, en false. Actualiza el modelo si el usuario agrego algun producto, quito alguno o modifico alguno, utilizando la información adicional disponible ${information}. Observaciones: *Si aun el usuario no especifica que no busca mas productos que ready quede en false.`},
+                                        {"role": "system", "content": `En base al carrito actual del usuario: ${JSON.stringify(cart?.cart)}, actualiza el carrito agregando, quitando o editando los productos que indique el usuario, puedes utilizar la información adicional disponible: ${information}.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -799,7 +760,7 @@ export const getMessage = async (req, res) => {
                                     },
                                 });
                                 const enrichedCart = act.output_parsed.cart.map(item => {
-                                    const product = products.find(p => p.name === item.name);
+                                    const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
                                     if (!product) return null
                                     let matchedVariation = null
                                     if (product.variations?.variations?.length) {
@@ -837,56 +798,37 @@ export const getMessage = async (req, res) => {
                                     };
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ instagramId: sender }, { cart: enrichedCart })
-                                if (act.output_parsed.ready) {
-                                    await axios.post(`https://graph.instagram.com/v21.0/${integration.idInstagram}/messages`, {
-                                        "recipient": {
-                                            "id": sender
-                                        },
-                                        "message": {
-                                            "text": `Perfecto, para realizar tu compra toca en el siguiente enlace: ${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`
-                                        }
-                                    }, {
-                                        headers: {
-                                            'Authorization': `Bearer ${integration.instagramToken}`,
-                                            'Content-Type': 'application/json'
-                                        }
-                                    })
-                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: `Perfecto, para realizar tu compra toca en el siguiente enlace: https://${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}`, agent: false, view: false, ready: true, tag: 'Compra'})
-                                    const newMessageSave = await newMessage.save()
-                                    return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: true })
-                                } else {
-                                    const get = await openai.chat.completions.create({
-                                        model: "gpt-4o-mini",
-                                        messages: [
-                                            {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información de este modelo: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}`}]},
-                                            ...context,
-                                            {"role": "user", "content": [{"type": "text", "text": message}]}
-                                        ],
-                                        response_format: {"type": "text"},
-                                        temperature: 1,
-                                        max_completion_tokens: 200,
-                                        top_p: 1,
-                                        frequency_penalty: 0,
-                                        presence_penalty: 0,
-                                        store: false
-                                    });
-                                    await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
-                                        "recipient": {
-                                            "id": sender
-                                        },
-                                        "message": {
-                                            "text": get.choices[0].message.content
-                                        }
-                                    }, {
-                                        headers: {
-                                            'Authorization': `Bearer ${integration.instagramToken}`,
-                                            'Content-Type': 'application/json'
-                                        }
-                                    })
-                                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
-                                    const newMessageSave = await newMessage.save()
-                                    return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
-                                }
+                                const get = await openai.chat.completions.create({
+                                    model: "gpt-4o-mini",
+                                    messages: [
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información del carrito actual: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}. Si es usuario esta listo para pagar incluye este enlace ${domain.domain === 'upviser.cl' ? process.env.WEB_URL : `https://${domain.domain}`}/finalizar-compra?phone=${number}`}]},
+                                        ...context,
+                                        {"role": "user", "content": [{"type": "text", "text": message}]}
+                                    ],
+                                    response_format: {"type": "text"},
+                                    temperature: 1,
+                                    max_completion_tokens: 1048,
+                                    top_p: 1,
+                                    frequency_penalty: 0,
+                                    presence_penalty: 0,
+                                    store: false
+                                });
+                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
+                                    "recipient": {
+                                        "id": sender
+                                    },
+                                    "message": {
+                                        "text": get.choices[0].message.content
+                                    }
+                                }, {
+                                    headers: {
+                                        'Authorization': `Bearer ${integration.instagramToken}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
+                                const newMessageSave = await newMessage.save()
+                                return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
                             if (information !== '') {
                                 const response = await openai.chat.completions.create({
