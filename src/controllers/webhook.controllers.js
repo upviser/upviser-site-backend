@@ -102,17 +102,38 @@ export const getMessage = async (req, res) => {
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
                             products = await Product.find().lean()
-                            const simplifiedProducts = products.map(product => {
+                            const nameCategories = products.map(product => {
+                                return {
+                                    name: product.name,
+                                    category: product.category
+                                }
+                            })
+                            const productsFilter = await openai.responses.parse({
+                                model: "gpt-4o-mini",
+                                input: [
+                                    {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories)}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
+                                    ...conversation,
+                                    {"role": "user", "content": message}
+                                ],
+                                text: {
+                                    format: zodTextFormat(
+                                        z.object({ names: z.array(z.string()) }),
+                                        "names"
+                                    )
+                                }
+                            });
+                            const simplifiedProducts = products.filter(product => productsFilter.output_parsed.names.includes(product.name)).map(product => {
                                 const variations = Array.isArray(product.variations?.variations) 
                                     ? product.variations.variations.map(v => ({
-                                        color: v.variation,
-                                        talla: v.subVariation,
+                                        variation: v.variation,
+                                        subVariation: v.subVariation,
+                                        subVariation2: v.subVariation2,
                                         stock: v.stock,
                                     })) 
                                     : [];
                                 return {
                                     name: product.name,
-                                    description: product.description?.slice(0, 200) + '...',
+                                    description: product.description?.slice(0, 100),
                                     price: product.price,
                                     beforePrice: product.beforePrice,
                                     stock: product.stock,
@@ -121,7 +142,7 @@ export const getMessage = async (req, res) => {
                                     category: product.category
                                 }
                             })
-                            information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
+                            information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                             const politics = await Politics.find().lean()
@@ -168,6 +189,15 @@ export const getMessage = async (req, res) => {
                                 const newCart = new Cart({ cart: [], phone: number })
                                 cart = await newCart.save()
                             }
+                            const cartMinimal = cart.cart.length ? cart.cart.map(product => ({
+                                name: product.name,
+                                variations: {
+                                    variation: product.variation?.variation || '',
+                                    subVariation: product.variation?.subVariation || '',
+                                    subVariation2: product.variation?.subVariation2 || ''
+                                },
+                                quantity: product.quantity
+                            })) : ''
                             const CartSchema = z.object({
                                 cart: z.array(z.object({
                                     name: z.string(),
@@ -177,12 +207,23 @@ export const getMessage = async (req, res) => {
                                         subVariation2: z.string()
                                     }),
                                     quantity: z.string()
-                                }))
+                                })),
+                                message: z.string()
                             });
                             const act = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `En base al carrito actual del usuario: ${JSON.stringify(cart?.cart)}, actualiza el carrito agregando, quitando o editando los productos que indique el usuario, puedes utilizar la información adicional disponible: ${information}.`},
+                                    {"role": "system", "content": `Tienes que actualizar el carrito del usuario y generar un mensaje de atención al cliente. 
+        
+    Carrito actual: ${JSON.stringify(cartMinimal)}.  
+    Información de productos: ${information}.  
+
+    Devuelve 2 cosas en JSON:
+    1. "cart": el carrito actualizado (name, variation, quantity).  
+    2. "message": un texto natural para enviar al usuario.  
+    - Sigue preguntando qué más desea hasta que diga todo lo que quiere comprar.  
+    - Si ya está listo para pagar, comparte este enlace: ${process.env.WEB_URL}/finalizar-compra?phone=${number}
+    - Responde de manera breve y clara`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -191,7 +232,7 @@ export const getMessage = async (req, res) => {
                                 },
                             });
                             const enrichedCart = act.output_parsed.cart.map(item => {
-                                const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+                                const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
                                 if (!product) return null
                                 let matchedVariation = null
                                 if (product.variations?.variations?.length) {
@@ -229,33 +270,18 @@ export const getMessage = async (req, res) => {
                                 };
                             }).filter(Boolean);
                             await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
-                            const get = await openai.chat.completions.create({
-                                model: "gpt-4o-mini",
-                                messages: [
-                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información del carrito actual: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}. Si es usuario esta listo para pagar incluye este enlace ${domain.domain === 'upviser.cl' ? process.env.WEB_URL : `https://${domain.domain}`}/finalizar-compra?phone=${number}`}]},
-                                    ...context,
-                                    {"role": "user", "content": [{"type": "text", "text": message}]}
-                                ],
-                                response_format: {"type": "text"},
-                                temperature: 1,
-                                max_completion_tokens: 1048,
-                                top_p: 1,
-                                frequency_penalty: 0,
-                                presence_penalty: 0,
-                                store: false
-                            });
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
                                 "to": number,
                                 "type": "text",
-                                "text": {"body": get.choices[0].message.content}
+                                "text": {"body": act.output_parsed.message}
                             }, {
                                 headers: {
                                     'Content-Type': 'application/json',
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
                             })
-                            const newMessage = new WhatsappMessage({phone: number, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
+                            const newMessage = new WhatsappMessage({phone: number, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                             const newMessageSave = await newMessage.save()
                             return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                         }
@@ -263,13 +289,13 @@ export const getMessage = async (req, res) => {
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
-                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial.`}]},
+                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial. *Responde de manera breve y clara.`}]},
                                     ...context,
                                     {"role": "user", "content": [{"type": "text", "text": message}]}
                                 ],
                                 response_format: {"type": "text"},
                                 temperature: 1,
-                                max_completion_tokens: 200,
+                                max_completion_tokens: 1048,
                                 top_p: 1,
                                 frequency_penalty: 0,
                                 presence_penalty: 0,
@@ -389,17 +415,38 @@ export const getMessage = async (req, res) => {
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
                                 products = await Product.find().lean()
-                                const simplifiedProducts = products.map(product => {
+                                const nameCategories = products.map(product => {
+                                    return {
+                                        name: product.name,
+                                        category: product.category
+                                    }
+                                })
+                                const productsFilter = await openai.responses.parse({
+                                    model: "gpt-4o-mini",
+                                    input: [
+                                        {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories)}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
+                                        ...conversation,
+                                        {"role": "user", "content": message}
+                                    ],
+                                    text: {
+                                        format: zodTextFormat(
+                                            z.object({ names: z.array(z.string()) }),
+                                            "names"
+                                        )
+                                    }
+                                });
+                                const simplifiedProducts = products.filter(product => productsFilter.output_parsed.names.includes(product.name)).map(product => {
                                     const variations = Array.isArray(product.variations?.variations) 
                                         ? product.variations.variations.map(v => ({
-                                            color: v.variation,
-                                            talla: v.subVariation,
+                                            variation: v.variation,
+                                            subVariation: v.subVariation,
+                                            subVariation2: v.subVariation2,
                                             stock: v.stock,
                                         })) 
                                         : [];
                                     return {
                                         name: product.name,
-                                        description: product.description?.slice(0, 200) + '...',
+                                        description: product.description?.slice(0, 100),
                                         price: product.price,
                                         beforePrice: product.beforePrice,
                                         stock: product.stock,
@@ -408,7 +455,7 @@ export const getMessage = async (req, res) => {
                                         category: product.category
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
+                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                                 const politics = await Politics.find().lean()
@@ -455,6 +502,15 @@ export const getMessage = async (req, res) => {
                                     const newCart = new Cart({ cart: [], messengerId: sender })
                                     cart = await newCart.save()
                                 }
+                                const cartMinimal = cart.cart.length ? cart.cart.map(product => ({
+                                    name: product.name,
+                                    variations: {
+                                        variation: product.variation?.variation || '',
+                                        subVariation: product.variation?.subVariation || '',
+                                        subVariation2: product.variation?.subVariation2 || ''
+                                    },
+                                    quantity: product.quantity
+                                })) : ''
                                 const CartSchema = z.object({
                                     cart: z.array(z.object({
                                         name: z.string(),
@@ -464,12 +520,23 @@ export const getMessage = async (req, res) => {
                                             subVariation2: z.string()
                                         }),
                                         quantity: z.string()
-                                    }))
+                                    })),
+                                    message: z.string()
                                 });
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `En base al carrito actual del usuario: ${JSON.stringify(cart?.cart)}, actualiza el carrito agregando, quitando o editando los productos que indique el usuario, puedes utilizar la información adicional disponible: ${information}.`},
+                                        {"role": "system", "content": `Tienes que actualizar el carrito del usuario y generar un mensaje de atención al cliente. 
+            
+        Carrito actual: ${JSON.stringify(cartMinimal)}.  
+        Información de productos: ${information}.  
+
+        Devuelve 2 cosas en JSON:
+        1. "cart": el carrito actualizado (name, variation, quantity).  
+        2. "message": un texto natural para enviar al usuario.  
+        - Sigue preguntando qué más desea hasta que diga todo lo que quiere comprar.  
+        - Si ya está listo para pagar, comparte este enlace: ${process.env.WEB_URL}/finalizar-compra?messengerId=${sender}
+        - Responde de manera breve y clara`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -478,7 +545,7 @@ export const getMessage = async (req, res) => {
                                     },
                                 });
                                 const enrichedCart = act.output_parsed.cart.map(item => {
-                                    const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+                                    const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
                                     if (!product) return null
                                     let matchedVariation = null
                                     if (product.variations?.variations?.length) {
@@ -516,35 +583,20 @@ export const getMessage = async (req, res) => {
                                     };
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ messengerId: sender }, { cart: enrichedCart })
-                                const get = await openai.chat.completions.create({
-                                    model: "gpt-4o-mini",
-                                    messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información del carrito actual: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}. Si es usuario esta listo para pagar incluye este enlace ${domain.domain === 'upviser.cl' ? process.env.WEB_URL : `https://${domain.domain}`}/finalizar-compra?phone=${number}`}]},
-                                        ...context,
-                                        {"role": "user", "content": [{"type": "text", "text": message}]}
-                                    ],
-                                    response_format: {"type": "text"},
-                                    temperature: 1,
-                                    max_completion_tokens: 1048,
-                                    top_p: 1,
-                                    frequency_penalty: 0,
-                                    presence_penalty: 0,
-                                    store: false
-                                });
                                 await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                     "recipient": {
                                         "id": sender
                                     },
                                     "messaging_type": "RESPONSE",
                                     "message": {
-                                        "text": get.choices[0].message.content
+                                        "text": act.output_parsed.message
                                     }
                                 }, {
                                     headers: {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
@@ -552,13 +604,13 @@ export const getMessage = async (req, res) => {
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial.`}]},
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial. *Responde de manera breve y clara.`}]},
                                         ...context,
                                         {"role": "user", "content": [{"type": "text", "text": message}]}
                                     ],
                                     response_format: {"type": "text"},
                                     temperature: 1,
-                                    max_completion_tokens: 200,
+                                    max_completion_tokens: 1048,
                                     top_p: 1,
                                     frequency_penalty: 0,
                                     presence_penalty: 0,
@@ -671,17 +723,38 @@ export const getMessage = async (req, res) => {
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
                                 products = await Product.find().lean()
-                                const simplifiedProducts = products.map(product => {
+                                const nameCategories = products.map(product => {
+                                    return {
+                                        name: product.name,
+                                        category: product.category
+                                    }
+                                })
+                                const productsFilter = await openai.responses.parse({
+                                    model: "gpt-4o-mini",
+                                    input: [
+                                        {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories)}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
+                                        ...conversation,
+                                        {"role": "user", "content": message}
+                                    ],
+                                    text: {
+                                        format: zodTextFormat(
+                                            z.object({ names: z.array(z.string()) }),
+                                            "names"
+                                        )
+                                    }
+                                });
+                                const simplifiedProducts = products.filter(product => productsFilter.output_parsed.names.includes(product.name)).map(product => {
                                     const variations = Array.isArray(product.variations?.variations) 
                                         ? product.variations.variations.map(v => ({
-                                            color: v.variation,
-                                            talla: v.subVariation,
+                                            variation: v.variation,
+                                            subVariation: v.subVariation,
+                                            subVariation2: v.subVariation2,
                                             stock: v.stock,
                                         })) 
                                         : [];
                                     return {
                                         name: product.name,
-                                        description: product.description?.slice(0, 200) + '...',
+                                        description: product.description?.slice(0, 100),
                                         price: product.price,
                                         beforePrice: product.beforePrice,
                                         stock: product.stock,
@@ -690,7 +763,7 @@ export const getMessage = async (req, res) => {
                                         category: product.category
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un produucto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
+                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                                 const politics = await Politics.find().lean()
@@ -737,6 +810,15 @@ export const getMessage = async (req, res) => {
                                     const newCart = new Cart({ cart: [], instagramId: sender })
                                     cart = await newCart.save()
                                 }
+                                const cartMinimal = cart.cart.length ? cart.cart.map(product => ({
+                                    name: product.name,
+                                    variations: {
+                                        variation: product.variation?.variation || '',
+                                        subVariation: product.variation?.subVariation || '',
+                                        subVariation2: product.variation?.subVariation2 || ''
+                                    },
+                                    quantity: product.quantity
+                                })) : ''
                                 const CartSchema = z.object({
                                     cart: z.array(z.object({
                                         name: z.string(),
@@ -746,12 +828,23 @@ export const getMessage = async (req, res) => {
                                             subVariation2: z.string()
                                         }),
                                         quantity: z.string()
-                                    }))
+                                    })),
+                                    message: z.string()
                                 });
                                 const act = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `En base al carrito actual del usuario: ${JSON.stringify(cart?.cart)}, actualiza el carrito agregando, quitando o editando los productos que indique el usuario, puedes utilizar la información adicional disponible: ${information}.`},
+                                        {"role": "system", "content": `Tienes que actualizar el carrito del usuario y generar un mensaje de atención al cliente. 
+            
+        Carrito actual: ${JSON.stringify(cartMinimal)}.  
+        Información de productos: ${information}.  
+
+        Devuelve 2 cosas en JSON:
+        1. "cart": el carrito actualizado (name, variation, quantity).  
+        2. "message": un texto natural para enviar al usuario.  
+        - Sigue preguntando qué más desea hasta que diga todo lo que quiere comprar.  
+        - Si ya está listo para pagar, comparte este enlace: ${process.env.WEB_URL}/finalizar-compra?instagramId=${sender}
+        - Responde de manera breve y clara`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -760,7 +853,7 @@ export const getMessage = async (req, res) => {
                                     },
                                 });
                                 const enrichedCart = act.output_parsed.cart.map(item => {
-                                    const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+                                    const product = products.find(p => p.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === item.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
                                     if (!product) return null
                                     let matchedVariation = null
                                     if (product.variations?.variations?.length) {
@@ -798,27 +891,12 @@ export const getMessage = async (req, res) => {
                                     };
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ instagramId: sender }, { cart: enrichedCart })
-                                const get = await openai.chat.completions.create({
-                                    model: "gpt-4o-mini",
-                                    messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, el usuario esta en una etapa de compra, en base al historial de conversación, al ultimo mensaje del usuario y a la información del carrito actual: ${JSON.stringify(act.output_parsed)}. Sigue preguntando que productos busca hasta que el usuario diga todo lo que necesita comprar, tambien te puedes apoyar en esta información para hacerlo: ${information}. Si es usuario esta listo para pagar incluye este enlace ${domain.domain === 'upviser.cl' ? process.env.WEB_URL : `https://${domain.domain}`}/finalizar-compra?phone=${number}`}]},
-                                        ...context,
-                                        {"role": "user", "content": [{"type": "text", "text": message}]}
-                                    ],
-                                    response_format: {"type": "text"},
-                                    temperature: 1,
-                                    max_completion_tokens: 1048,
-                                    top_p: 1,
-                                    frequency_penalty: 0,
-                                    presence_penalty: 0,
-                                    store: false
-                                });
-                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
+                                await axios.post(`https://graph.facebook.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
                                         "id": sender
                                     },
                                     "message": {
-                                        "text": get.choices[0].message.content
+                                        "text": act.output_parsed.message
                                     }
                                 }, {
                                     headers: {
@@ -826,7 +904,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: get.choices[0].message.content, agent: false, view: false, tag: 'Productos'})
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
@@ -834,13 +912,13 @@ export const getMessage = async (req, res) => {
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
-                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial.`}]},
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente en donde debes responder las preguntas de los usuarios unicamente con la siguiente información: ${information}. *No te hagas pasar por una persona, siempre deja claro que eres un agente con inteligencia artificial. *Responde de manera breve y clara.`}]},
                                         ...context,
                                         {"role": "user", "content": [{"type": "text", "text": message}]}
                                     ],
                                     response_format: {"type": "text"},
                                     temperature: 1,
-                                    max_completion_tokens: 200,
+                                    max_completion_tokens: 1048,
                                     top_p: 1,
                                     frequency_penalty: 0,
                                     presence_penalty: 0,
