@@ -266,7 +266,8 @@ export const getMessage = async (req, res) => {
                                     stock: matchedVariation?.stock ?? product.stock,
                                     category: product.category,
                                     quantityOffers: product.quantityOffers,
-                                    sku: matchedVariation?.sku || ''
+                                    sku: matchedVariation?.sku || '',
+                                    dimentions: product.dimentions || ''
                                 };
                             }).filter(Boolean);
                             await Cart.findOneAndUpdate({ phone: number }, { cart: enrichedCart })
@@ -579,7 +580,8 @@ export const getMessage = async (req, res) => {
                                         stock: matchedVariation?.stock ?? product.stock,
                                         category: product.category,
                                         quantityOffers: product.quantityOffers,
-                                        sku: matchedVariation?.sku || ''
+                                        sku: matchedVariation?.sku || '',
+                                        dimentions: product.dimentions || ''
                                     };
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ messengerId: sender }, { cart: enrichedCart })
@@ -887,7 +889,8 @@ export const getMessage = async (req, res) => {
                                         stock: matchedVariation?.stock ?? product.stock,
                                         category: product.category,
                                         quantityOffers: product.quantityOffers,
-                                        sku: matchedVariation?.sku || ''
+                                        sku: matchedVariation?.sku || '',
+                                        dimentions: product.dimentions || ''
                                     };
                                 }).filter(Boolean);
                                 await Cart.findOneAndUpdate({ instagramId: sender }, { cart: enrichedCart })

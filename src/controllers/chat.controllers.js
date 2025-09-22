@@ -225,7 +225,8 @@ Devuelve 2 cosas en JSON:
                         stock: matchedVariation?.stock ?? product.stock,
                         category: product.category,
                         quantityOffers: product.quantityOffers,
-                        sku: matchedVariation?.sku || ''
+                        sku: matchedVariation?.sku || '',
+                        dimentions: product.dimentions || ''
                     };
                 }).filter(Boolean);
                 const newMessage = new ChatMessage({senderId: senderId, message: message, response: act.output_parsed.message, agent: false, adminView: false, userView: true, tag: 'Productos'})
