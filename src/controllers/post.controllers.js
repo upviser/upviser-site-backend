@@ -39,3 +39,12 @@ export const updatePost = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const deletePost = async (req, res) => {
+    try {
+        const postDelete = await Post.findByIdAndRemove(req.params.id)
+        return res.json(postDelete)
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
