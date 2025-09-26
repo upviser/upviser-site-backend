@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
     idInstagram: { type: String },
     instagramState: { type: String },
     zoomState: { type: String },
+    senderEmail: { type: String }
 }, {
     timestamps: true
 })

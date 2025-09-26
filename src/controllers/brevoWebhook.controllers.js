@@ -10,7 +10,7 @@ export const getStatus = async (req, res) => {
     const senderEmail = req.body.sender_email
 
     if (senderEmail !== process.env.BREVO_EMAIL) {
-        const user = await User.findOne({ email: senderEmail }).lean()
+        const user = await User.findOne({ senderEmail: senderEmail }).lean()
         if (!user) return res.status(200).send('Webhook received');
         await axios.post(`${user.api}/brevo-webhook`, req.body)
         return res.status(200).send('Webhook received');
