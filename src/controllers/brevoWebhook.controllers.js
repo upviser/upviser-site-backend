@@ -1,6 +1,7 @@
 import { updateClientEmailStatusById } from '../utils/updateEmail.js'
 
 export const getStatus = async (req, res) => {
+    console.log(req.body)
     const event = req.body.event;
     const email = req.body.email
     const emailId = req.body.tags[0]
