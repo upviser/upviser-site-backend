@@ -3,6 +3,7 @@ import User from '../models/User.js'
 import axios from 'axios';
 
 export const getStatus = async (req, res) => {
+    console.log(req.body)
     const event = req.body.event;
     const email = req.body.email
     const emailId = req.body.tags[0]
