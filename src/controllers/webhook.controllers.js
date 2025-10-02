@@ -101,7 +101,7 @@ export const getMessage = async (req, res) => {
                             io.emit('newNotification')
                             return res.sendStatus(200)
                         }
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                             products = await Product.find().lean()
                             const nameCategories = products.map(product => {
                                 return {
@@ -143,25 +143,6 @@ export const getMessage = async (req, res) => {
                                     category: product.category
                                 }
                             })
-                            information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
-                        }
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
-                            const politics = await Politics.find().lean()
-                            information = `${information}. ${JSON.stringify(politics[0].shipping)}`
-                        }
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
-                            const storeData = await StoreData.find().lean()
-                            information = `${information}. ${JSON.stringify(storeData[0])}`
-                        }
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
-                            const politics = await Politics.find().lean()
-                            information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
-                        }
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
-                            const politics = await Politics.find().lean()
-                            information = `${information}. ${JSON.stringify(politics[0].pay)}`
-                        }
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                             const services = await Service.find().lean();
                             const nameDescriptions = services.map(service => {
                                 return {
@@ -183,7 +164,6 @@ export const getMessage = async (req, res) => {
                                     )
                                 }
                             });
-                            console.log(nameDescriptions)
                             const simplifiedServices = services.filter(service => servicesFilter.output_parsed.names?.includes(service.name)).map(service => {
                                 return {
                                     name: service.name,
@@ -195,7 +175,23 @@ export const getMessage = async (req, res) => {
                                     plans: service.plans
                                 }
                             })
-                            information = `${information}. Información de servicios: ${JSON.stringify(simplifiedServices)}.`;
+                            information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices)}.` : ''}`
+                        }
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
+                            const politics = await Politics.find().lean()
+                            information = `${information}. ${JSON.stringify(politics[0].shipping)}`
+                        }
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
+                            const storeData = await StoreData.find().lean()
+                            information = `${information}. ${JSON.stringify(storeData[0])}`
+                        }
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
+                            const politics = await Politics.find().lean()
+                            information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
+                        }
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
+                            const politics = await Politics.find().lean()
+                            information = `${information}. ${JSON.stringify(politics[0].pay)}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                             const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
