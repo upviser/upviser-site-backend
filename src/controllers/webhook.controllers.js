@@ -215,6 +215,7 @@ export const getMessage = async (req, res) => {
                                     )
                                 }
                             });
+                            console.log(callsFilter.output_parsed.nameMeetings)
                             const simplifiedCalls = calls.filter(call => callsFilter.output_parsed.nameMeetings?.includes(call.nameMeeting)).map(call => {
                                 return {
                                     type: call.type,
