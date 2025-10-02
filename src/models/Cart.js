@@ -29,7 +29,7 @@ const CartSchema = new mongoose.Schema({
   phone: { type: Number },
   instagramId: { type: String },
   messengerId: { type: String },
-  cart: ProductSchema
+  cart: [ProductSchema]
 })
 
 const Cart = mongoose.models.Cart || mongoose.model('Cart', CartSchema)
