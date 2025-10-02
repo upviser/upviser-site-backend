@@ -522,25 +522,71 @@ export const getMessage = async (req, res) => {
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 const services = await Service.find().lean();
-                                const cleanedServices = services.map(service => {
-                                const cleanedSteps = (service.steps || []).filter(step => step.design?.length > 0)
-                                    .map(({ _id, createdAt, updatedAt, ...rest }) => rest);
-                                const cleanedPlans = service.plans?.plans?.map(plan => ({
-                                    ...plan,
-                                    functionalities: (plan.functionalities || []).map(({ _id, ...func }) => func)
-                                })) || [];
-                                const { createdAt, updatedAt, _id, __v, ...restService } = service;
-                                return {
-                                    ...restService,
-                                    steps: cleanedSteps,
-                                    plans: cleanedPlans
-                                };
+                                const nameDescriptions = services.map(service => {
+                                    return {
+                                        name: service.name,
+                                        category: service.description.slice(0, 50)
+                                    }
+                                })
+                                const servicesFilter = await openai.responses.parse({
+                                    model: "gpt-4o-mini",
+                                    input: [
+                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor con la intención del usuario`},
+                                        ...conversation,
+                                        {"role": "user", "content": message}
+                                    ],
+                                    text: {
+                                        format: zodTextFormat(
+                                            z.object({ names: z.array(z.string()) }),
+                                            "names"
+                                        )
+                                    }
                                 });
-                                information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}.`;
+                                const simplifiedServices = services.filter(service => servicesFilter.output_parsed.names.includes(service.name)).map(service => {
+                                    return {
+                                        name: service.name,
+                                        description: service.description.slice(0, 100),
+                                        steps: service.steps,
+                                        typeService: service.typeService,
+                                        typePrice: service.typePrice,
+                                        typePay: service.typePay,
+                                        plans: service.plans
+                                    }
+                                })
+                                information = `${information}. Información de servicios: ${JSON.stringify(simplifiedServices)}.`;
                             }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                                information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
+                                const nameDescriptions = calls.map(call => {
+                                    return {
+                                        nameMeeting: call.nameMeeting,
+                                        description: call.description.slice(0, 50)
+                                    }
+                                })
+                                const callsFilter = await openai.responses.parse({
+                                    model: "gpt-4o-mini",
+                                    input: [
+                                        {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
+                                        ...conversation,
+                                        {"role": "user", "content": message}
+                                    ],
+                                    text: {
+                                        format: zodTextFormat(
+                                            z.object({ namemeetings: z.array(z.string()) }),
+                                            "nameMeetings"
+                                        )
+                                    }
+                                });
+                                const simplifiedCalls = calls.filter(call => callsFilter.output_parsed.nameMeetings.includes(call.nameMeeting)).map(call => {
+                                    return {
+                                        type: call.type,
+                                        nameMeeting: call.nameMeeting,
+                                        title: call.title,
+                                        duration: call.duration,
+                                        description: call.description.slice(0, 100)
+                                    }
+                                })
+                                information = `${information}. ${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                                 let cart
@@ -831,25 +877,71 @@ export const getMessage = async (req, res) => {
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 const services = await Service.find().lean();
-                                const cleanedServices = services.map(service => {
-                                const cleanedSteps = (service.steps || []).filter(step => step.design?.length > 0)
-                                    .map(({ _id, createdAt, updatedAt, ...rest }) => rest);
-                                const cleanedPlans = service.plans?.plans?.map(plan => ({
-                                    ...plan,
-                                    functionalities: (plan.functionalities || []).map(({ _id, ...func }) => func)
-                                })) || [];
-                                const { createdAt, updatedAt, _id, __v, ...restService } = service;
-                                return {
-                                    ...restService,
-                                    steps: cleanedSteps,
-                                    plans: cleanedPlans
-                                };
+                                const nameDescriptions = services.map(service => {
+                                    return {
+                                        name: service.name,
+                                        category: service.description.slice(0, 50)
+                                    }
+                                })
+                                const servicesFilter = await openai.responses.parse({
+                                    model: "gpt-4o-mini",
+                                    input: [
+                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor con la intención del usuario`},
+                                        ...conversation,
+                                        {"role": "user", "content": message}
+                                    ],
+                                    text: {
+                                        format: zodTextFormat(
+                                            z.object({ names: z.array(z.string()) }),
+                                            "names"
+                                        )
+                                    }
                                 });
-                                information = `${information}. Información de servicios: ${JSON.stringify(cleanedServices)}.`;
+                                const simplifiedServices = services.filter(service => servicesFilter.output_parsed.names.includes(service.name)).map(service => {
+                                    return {
+                                        name: service.name,
+                                        description: service.description.slice(0, 100),
+                                        steps: service.steps,
+                                        typeService: service.typeService,
+                                        typePrice: service.typePrice,
+                                        typePay: service.typePay,
+                                        plans: service.plans
+                                    }
+                                })
+                                information = `${information}. Información de servicios: ${JSON.stringify(simplifiedServices)}.`;
                             }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
-                                information = `${information}. ${JSON.stringify(calls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
+                                const nameDescriptions = calls.map(call => {
+                                    return {
+                                        nameMeeting: call.nameMeeting,
+                                        description: call.description.slice(0, 50)
+                                    }
+                                })
+                                const callsFilter = await openai.responses.parse({
+                                    model: "gpt-4o-mini",
+                                    input: [
+                                        {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
+                                        ...conversation,
+                                        {"role": "user", "content": message}
+                                    ],
+                                    text: {
+                                        format: zodTextFormat(
+                                            z.object({ namemeetings: z.array(z.string()) }),
+                                            "nameMeetings"
+                                        )
+                                    }
+                                });
+                                const simplifiedCalls = calls.filter(call => callsFilter.output_parsed.nameMeetings.includes(call.nameMeeting)).map(call => {
+                                    return {
+                                        type: call.type,
+                                        nameMeeting: call.nameMeeting,
+                                        title: call.title,
+                                        duration: call.duration,
+                                        description: call.description.slice(0, 100)
+                                    }
+                                })
+                                information = `${information}. ${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                                 let cart
