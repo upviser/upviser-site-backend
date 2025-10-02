@@ -133,7 +133,7 @@ export const getMessage = async (req, res) => {
                             const servicesFilter = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor con la intención del usuario`},
+                                    {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
