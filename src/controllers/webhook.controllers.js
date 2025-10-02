@@ -79,6 +79,7 @@ export const getMessage = async (req, res) => {
                                 format: zodTextFormat(TypeSchema, "type"),
                             },
                         });
+                        console.log(type.output_parsed)
                         let information = ''
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
