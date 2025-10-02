@@ -133,7 +133,7 @@ export const getMessage = async (req, res) => {
                             const servicesFilter = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversacion se ha hablado de algun servicio agrega su name tambien.`},
+                                    {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -315,7 +315,7 @@ export const getMessage = async (req, res) => {
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
-                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, se detecto la intención de hablar con alguien de soporte por ende se esta transfieriendo con alguien de soporte, genera una respuesta utilizando la siguiente información: ${information}.`}]},
+                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, se detecto la intención de hablar con alguien de soporte por ende se esta transfieriendo con alguien de soporte, genera una respuesta dejando saber esto al usuario utilizando la siguiente información: ${information}.`}]},
                                     ...context,
                                     {"role": "user", "content": [{"type": "text", "text": message}]}
                                 ],
