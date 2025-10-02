@@ -144,6 +144,7 @@ export const getMessage = async (req, res) => {
                                     )
                                 }
                             });
+                            console.log(servicesFilter.output_parsed.names)
                             const simplifiedServices = services.filter(service => servicesFilter.output_parsed.names?.includes(service.name)).map(service => {
                                 return {
                                     name: service.name,
