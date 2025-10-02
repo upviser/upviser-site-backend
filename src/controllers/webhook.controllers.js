@@ -71,7 +71,7 @@ export const getMessage = async (req, res) => {
                         const type = await openai.responses.parse({
                             model: "gpt-4o-mini",
                             input: [
-                                {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte."},
+                                {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte."},
                                 ...conversation,
                                 {"role": "user", "content": message}
                             ],
@@ -183,6 +183,7 @@ export const getMessage = async (req, res) => {
                                     )
                                 }
                             });
+                            console.log(nameDescriptions)
                             const simplifiedServices = services.filter(service => servicesFilter.output_parsed.names?.includes(service.name)).map(service => {
                                 return {
                                     name: service.name,
