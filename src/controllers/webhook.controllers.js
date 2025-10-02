@@ -81,7 +81,7 @@ export const getMessage = async (req, res) => {
                         });
                         console.log(type.output_parsed)
                         let information = ''
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte') && type.output_parsed.length === 1) {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
                                 "to": number,
