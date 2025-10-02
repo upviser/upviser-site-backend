@@ -69,7 +69,8 @@ export const createMessage = async (req, res) => {
                     'Content-Type': 'application/json'
                 }
             })
-            const newMessage = new MessengerMessage({messengerId: req.body.messengerId, response: req.body.response, agent: req.body.agent, view: req.body.view})
+            const ultMessage = await MessengerMessage.findOne({ messengerId: req.body.messengerId }).sort({ createdAt: -1 })
+            const newMessage = new MessengerMessage({messengerId: req.body.messengerId, response: req.body.response, agent: req.body.agent, view: req.body.view, tag: ultMessage.tag})
             await newMessage.save()
             return res.sendStatus(200)
         } else {

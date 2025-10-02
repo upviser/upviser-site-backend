@@ -79,7 +79,6 @@ export const getMessage = async (req, res) => {
                                 format: zodTextFormat(TypeSchema, "type"),
                             },
                         });
-                        console.log(type.output_parsed)
                         let information = ''
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                             products = await Product.find().lean()
@@ -144,7 +143,6 @@ export const getMessage = async (req, res) => {
                                     )
                                 }
                             });
-                            console.log(servicesFilter.output_parsed.names)
                             const simplifiedServices = services.filter(service => servicesFilter.output_parsed.names?.includes(service.name)).map(service => {
                                 return {
                                     name: service.name,
@@ -346,7 +344,7 @@ export const getMessage = async (req, res) => {
                             io.emit('newNotification')
                             return res.sendStatus(200)
                         }
-                        if (information !== '' || information.length < 10) {
+                        if (information.length > 20) {
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
@@ -443,7 +441,7 @@ export const getMessage = async (req, res) => {
                             const type = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
+                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -452,29 +450,7 @@ export const getMessage = async (req, res) => {
                                 },
                             })
                             let information = ''
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
-                                await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
-                                    "recipient": {
-                                        "id": sender
-                                    },
-                                    "messaging_type": "RESPONSE",
-                                    "message": {
-                                        "text": 'Te estoy transfieriendo con alguien de soporte en este momento'
-                                    }
-                                }, {
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    }
-                                })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false, tag: 'Transferido' })
-                                await newMessage.save()
-                                io.emit('messenger', newMessage)
-                                const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
-                                await notification.save()
-                                io.emit('newNotification')
-                                return res.send(newMessage)
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 products = await Product.find().lean()
                                 const nameCategories = products.map(product => {
                                     return {
@@ -516,25 +492,6 @@ export const getMessage = async (req, res) => {
                                         category: product.category
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
-                                const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].shipping)}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
-                                const storeData = await StoreData.find().lean()
-                                information = `${information}. ${JSON.stringify(storeData[0])}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
-                                const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
-                                const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].pay)}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 const services = await Service.find().lean();
                                 const nameDescriptions = services.map(service => {
                                     return {
@@ -545,7 +502,7 @@ export const getMessage = async (req, res) => {
                                 const servicesFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor con la intención del usuario`},
+                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -567,7 +524,23 @@ export const getMessage = async (req, res) => {
                                         plans: service.plans
                                     }
                                 })
-                                information = `${information}. Información de servicios: ${JSON.stringify(simplifiedServices)}.`;
+                                information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices)}.` : ''}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
+                                const politics = await Politics.find().lean()
+                                information = `${information}. ${JSON.stringify(politics[0].shipping)}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
+                                const storeData = await StoreData.find().lean()
+                                information = `${information}. ${JSON.stringify(storeData[0])}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
+                                const politics = await Politics.find().lean()
+                                information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
+                                const politics = await Politics.find().lean()
+                                information = `${information}. ${JSON.stringify(politics[0].pay)}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
@@ -708,7 +681,44 @@ export const getMessage = async (req, res) => {
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
-                            if (information !== '') {
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
+                                const response = await openai.chat.completions.create({
+                                    model: "gpt-4o-mini",
+                                    messages: [
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, se detecto la intención de hablar con alguien de soporte por ende se esta transfieriendo con alguien de soporte, genera una respuesta dejando saber esto al usuario utilizando la siguiente información: ${information}.`}]},
+                                        ...context,
+                                        {"role": "user", "content": [{"type": "text", "text": message}]}
+                                    ],
+                                    response_format: {"type": "text"},
+                                    temperature: 1,
+                                    max_completion_tokens: 1048,
+                                    top_p: 1,
+                                    frequency_penalty: 0,
+                                    presence_penalty: 0,
+                                    store: false
+                                });
+                                await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
+                                    "recipient": {
+                                        "id": sender
+                                    },
+                                    "messaging_type": "RESPONSE",
+                                    "message": {
+                                        "text": response.choices[0].message.content
+                                    }
+                                }, {
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: response.choices[0].message.content, agent: true, view: false, tag: 'Transferido' })
+                                await newMessage.save()
+                                io.emit('messenger', newMessage)
+                                const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
+                                await notification.save()
+                                io.emit('newNotification')
+                                return res.send(newMessage)
+                            }
+                            if (information.length > 20) {
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
@@ -747,14 +757,14 @@ export const getMessage = async (req, res) => {
                                     },
                                     "messaging_type": "RESPONSE",
                                     "message": {
-                                        "text": 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar'
+                                        "text": 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte'
                                     }
                                 }, {
                                     headers: {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false, tag: 'Agente IA'})
+                                const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Transferido'})
                                 await newMessage.save()
                                 return res.send(newMessage)
                             }
@@ -798,7 +808,7 @@ export const getMessage = async (req, res) => {
                             const type = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, intención de compra de servicios, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
+                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -807,29 +817,7 @@ export const getMessage = async (req, res) => {
                                 },
                             });
                             let information = ''
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
-                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
-                                    "recipient": {
-                                        "id": sender
-                                    },
-                                    "message": {
-                                        "text": 'Te estoy transfieriendo con alguien de soporte en este momento'
-                                    }
-                                }, {
-                                    headers: {
-                                        'Authorization': `Bearer ${integration.instagramToken}`,
-                                        'Content-Type': 'application/json'
-                                    }
-                                })
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false, tag: 'Transferido' })
-                                await newMessage.save()
-                                io.emit('instagram', newMessage)
-                                const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
-                                await notification.save()
-                                io.emit('newNotification')
-                                return res.send(newMessage)
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos')) {
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 products = await Product.find().lean()
                                 const nameCategories = products.map(product => {
                                     return {
@@ -871,25 +859,6 @@ export const getMessage = async (req, res) => {
                                         category: product.category
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
-                                const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].shipping)}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
-                                const storeData = await StoreData.find().lean()
-                                information = `${information}. ${JSON.stringify(storeData[0])}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
-                                const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
-                                const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].pay)}`
-                            }
-                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                                 const services = await Service.find().lean();
                                 const nameDescriptions = services.map(service => {
                                     return {
@@ -900,7 +869,7 @@ export const getMessage = async (req, res) => {
                                 const servicesFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor con la intención del usuario`},
+                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -922,7 +891,23 @@ export const getMessage = async (req, res) => {
                                         plans: service.plans
                                     }
                                 })
-                                information = `${information}. Información de servicios: ${JSON.stringify(simplifiedServices)}.`;
+                                information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices)}.` : ''}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
+                                const politics = await Politics.find().lean()
+                                information = `${information}. ${JSON.stringify(politics[0].shipping)}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
+                                const storeData = await StoreData.find().lean()
+                                information = `${information}. ${JSON.stringify(storeData[0])}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
+                                const politics = await Politics.find().lean()
+                                information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
+                            }
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
+                                const politics = await Politics.find().lean()
+                                information = `${information}. ${JSON.stringify(politics[0].pay)}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
@@ -1063,7 +1048,44 @@ export const getMessage = async (req, res) => {
                                 const newMessageSave = await newMessage.save()
                                 return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                             }
-                            if (information !== '') {
+                            if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
+                                const response = await openai.chat.completions.create({
+                                    model: "gpt-4o-mini",
+                                    messages: [
+                                        {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, se detecto la intención de hablar con alguien de soporte por ende se esta transfieriendo con alguien de soporte, genera una respuesta dejando saber esto al usuario utilizando la siguiente información: ${information}.`}]},
+                                        ...context,
+                                        {"role": "user", "content": [{"type": "text", "text": message}]}
+                                    ],
+                                    response_format: {"type": "text"},
+                                    temperature: 1,
+                                    max_completion_tokens: 1048,
+                                    top_p: 1,
+                                    frequency_penalty: 0,
+                                    presence_penalty: 0,
+                                    store: false
+                                });
+                                await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
+                                    "recipient": {
+                                        "id": sender
+                                    },
+                                    "message": {
+                                        "text": response.choices[0].message.content
+                                    }
+                                }, {
+                                    headers: {
+                                        'Authorization': `Bearer ${integration.instagramToken}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: true, view: false, tag: 'Transferido' })
+                                await newMessage.save()
+                                io.emit('instagram', newMessage)
+                                const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
+                                await notification.save()
+                                io.emit('newNotification')
+                                return res.send(newMessage)
+                            }
+                            if (information.length > 20) {
                                 const response = await openai.chat.completions.create({
                                     model: "gpt-4o-mini",
                                     messages: [
@@ -1101,7 +1123,7 @@ export const getMessage = async (req, res) => {
                                         "id": sender
                                     },
                                     "message": {
-                                        "text": 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar'
+                                        "text": 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte'
                                     }
                                 }, {
                                     headers: {
@@ -1109,7 +1131,7 @@ export const getMessage = async (req, res) => {
                                         'Content-Type': 'application/json'
                                     }
                                 })
-                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false, tag: 'Agente IA'})
+                                const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
                                 return res.send(newMessage)
                             }

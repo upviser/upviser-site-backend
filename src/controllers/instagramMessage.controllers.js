@@ -68,7 +68,8 @@ export const createMessage = async (req, res) => {
                     'Content-Type': 'application/json'
                 }
             })
-            const newMessage = new InstagramMessage({instagramId: req.body.instagramId, response: req.body.response, agent: req.body.agent, view: req.body.view})
+            const ultMessage = await InstagramMessage.findOne({ instagramId: req.body.instagramId }).sort({ createdAt: -1 })
+            const newMessage = new InstagramMessage({instagramId: req.body.instagramId, response: req.body.response, agent: req.body.agent, view: req.body.view, tag: ultMessage.tag})
             await newMessage.save()
             return res.sendStatus(200)
         } else {

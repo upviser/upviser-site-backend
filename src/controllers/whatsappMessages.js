@@ -68,7 +68,8 @@ export const newMessage = async (req, res) => {
                     "Authorization": `Bearer ${integration.whatsappToken}`
                 }
             })
-            const newMessage = new WhatsappChat({phone: req.body.phone, response: req.body.response, agent: req.body.agent, view: true})
+            const ultMessage = await WhatsappChat.findOne({ phone: req.body.phone }).sort({ createdAt: -1 })
+            const newMessage = new WhatsappChat({phone: req.body.phone, response: req.body.response, agent: req.body.agent, view: true, tag: ultMessage.tag})
             await newMessage.save()
             return res.send(newMessage)
         } else {
