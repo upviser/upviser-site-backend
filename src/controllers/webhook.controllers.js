@@ -215,7 +215,6 @@ export const getMessage = async (req, res) => {
                                     )
                                 }
                             });
-                            console.log(callsFilter.output_parsed.nameMeetings)
                             const simplifiedCalls = calls.filter(call => callsFilter.output_parsed.nameMeetings?.includes(call.nameMeeting)).map(call => {
                                 return {
                                     type: call.type,
@@ -225,7 +224,7 @@ export const getMessage = async (req, res) => {
                                     description: call.description.slice(0, 100)
                                 }
                             })
-                            information = `${information}. ${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
+                            information = `${information}. ${simplifiedCalls.length ? `${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting.` : ''}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                             let cart
