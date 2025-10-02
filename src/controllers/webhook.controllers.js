@@ -81,7 +81,7 @@ export const getMessage = async (req, res) => {
                         });
                         console.log(type.output_parsed)
                         let information = ''
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte') && type.output_parsed.length === 1) {
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte') && !JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
                                 "to": number,
@@ -224,7 +224,6 @@ export const getMessage = async (req, res) => {
                                     description: call.description.slice(0, 100)
                                 }
                             })
-                            console.log(simplifiedCalls)
                             information = `${information}. ${simplifiedCalls.length ? `${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting.` : ''}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
@@ -331,7 +330,7 @@ export const getMessage = async (req, res) => {
                             const newMessageSave = await newMessage.save()
                             return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
                         }
-                        if (information !== '') {
+                        if (information !== '' || information.length < 10) {
                             const response = await openai.chat.completions.create({
                                 model: "gpt-4o-mini",
                                 messages: [
@@ -366,14 +365,14 @@ export const getMessage = async (req, res) => {
                                 "messaging_product": "whatsapp",
                                 "to": number,
                                 "type": "text",
-                                "text": {"body": 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar'}
+                                "text": {"body": 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte'}
                             }, {
                                 headers: {
                                     'Content-Type': 'application/json',
                                     "Authorization": `Bearer ${integration.whatsappToken}`
                                 }
                             })
-                            const newMessage = new WhatsappMessage({phone: number, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, si quieres te puedo transferir con alguien de soporte para que te pueda ayudar', agent: false, view: false, tag: 'Agente IA'})
+                            const newMessage = new WhatsappMessage({phone: number, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Agente IA'})
                             await newMessage.save()
                             return res.send(newMessage)
                         }
