@@ -81,26 +81,6 @@ export const getMessage = async (req, res) => {
                         });
                         console.log(type.output_parsed)
                         let information = ''
-                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte') && !JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
-                            await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
-                                "messaging_product": "whatsapp",
-                                "to": number,
-                                "type": "text",
-                                "text": {"body": 'Te estoy transfieriendo con alguien de soporte en este momento'}
-                            }, {
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    "Authorization": `Bearer ${integration.whatsappToken}`
-                                }
-                            })
-                            const newMessage = new WhatsappMessage({ phone: number, message: message, response: 'Te estoy transfieriendo con alguien de soporte en este momento', agent: true, view: false, tag: 'Transferido' })
-                            await newMessage.save()
-                            io.emit('whatsapp', newMessage)
-                            const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
-                            await notification.save()
-                            io.emit('newNotification')
-                            return res.sendStatus(200)
-                        }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('productos') || JSON.stringify(type.output_parsed).toLowerCase().includes('servicios')) {
                             products = await Product.find().lean()
                             const nameCategories = products.map(product => {
@@ -329,6 +309,41 @@ export const getMessage = async (req, res) => {
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                             const newMessageSave = await newMessage.save()
                             return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
+                        }
+                        if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
+                            const response = await openai.chat.completions.create({
+                                model: "gpt-4o-mini",
+                                messages: [
+                                    {"role": "system", "content": [{"type": "text", "text": `Eres un agente para la atención al cliente, se detecto la intención de hablar con alguien de soporte por ende se esta transfieriendo con alguien de soporte, genera una respuesta utilizando la siguiente información: ${information}.`}]},
+                                    ...context,
+                                    {"role": "user", "content": [{"type": "text", "text": message}]}
+                                ],
+                                response_format: {"type": "text"},
+                                temperature: 1,
+                                max_completion_tokens: 1048,
+                                top_p: 1,
+                                frequency_penalty: 0,
+                                presence_penalty: 0,
+                                store: false
+                            });
+                            await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
+                                "messaging_product": "whatsapp",
+                                "to": number,
+                                "type": "text",
+                                "text": {"body": response.choices[0].message.content}
+                            }, {
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    "Authorization": `Bearer ${integration.whatsappToken}`
+                                }
+                            })
+                            const newMessage = new WhatsappMessage({ phone: number, message: message, response: response.choices[0].message.content, agent: true, view: false, tag: 'Transferido' })
+                            await newMessage.save()
+                            io.emit('whatsapp', newMessage)
+                            const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
+                            await notification.save()
+                            io.emit('newNotification')
+                            return res.sendStatus(200)
                         }
                         if (information !== '' || information.length < 10) {
                             const response = await openai.chat.completions.create({
