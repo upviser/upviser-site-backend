@@ -14,9 +14,12 @@ const AutomatizationsSchema = new mongoose.Schema({
 
 const AutomatizationSchema = new mongoose.Schema({
     startType: { type: String, required: true },
-    startValue: { type: String, required: true },
+    startValue: { type: String },
     name: { type: String, required: true },
-    automatization: [AutomatizationsSchema]
+    automatization: [AutomatizationsSchema],
+    text: { type: String },
+    replyPromt: { type: String },
+    message: { type: String }
 }, {
     timestamps: true
 })

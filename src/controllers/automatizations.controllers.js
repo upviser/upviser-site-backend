@@ -10,26 +10,32 @@ import Style from '../models/Style.js'
 
 export const createAutomatization = async (req, res) => {
     try {
-        const { startType, startValue, name, automatization } = req.body
+        const { startType, startValue, automatization } = req.body
         const emails = []
         let previousDate = new Date()
-        for (const email of automatization) {
-            const currentDate = new Date(previousDate)
-            if (email.time === 'Días') {
-                currentDate.setDate(currentDate.getDate() + Number(email.number))
-            } else if (email.time === 'Horas') {
-                currentDate.setHours(currentDate.getHours() + Number(email.number))
-            } else if (email.time === 'Minutos') {
-                currentDate.setMinutes(currentDate.getMinutes() + Number(email.number))
+        if (startType !== 'Comentario en post de Instagram') {
+            for (const email of automatization) {
+                const currentDate = new Date(previousDate)
+                if (email.time === 'Días') {
+                    currentDate.setDate(currentDate.getDate() + Number(email.number))
+                } else if (email.time === 'Horas') {
+                    currentDate.setHours(currentDate.getHours() + Number(email.number))
+                } else if (email.time === 'Minutos') {
+                    currentDate.setMinutes(currentDate.getMinutes() + Number(email.number))
+                }
+                email.date = currentDate
+                emails.push(email)
+                previousDate = currentDate
             }
-            email.date = currentDate
-            emails.push(email)
-            previousDate = currentDate
+            const newAutomatization = new Automatization({ ...req.body, automatization: emails })
+            const newAutomatizationSave = await newAutomatization.save()
+            res.json(newAutomatizationSave)
+        } else {
+            const newAutomatization = new Automatization({ startType, name: req.body.name, text: req.body.text, replyPromt: req.body.replyPromt, message: req.body.message })
+            const newAutomatizationSave = await newAutomatization.save()
+            res.json(newAutomatizationSave)
         }
-        const newAutomatization = new Automatization({ startType, startValue, name, automatization: emails })
-        const newAutomatizationSave = await newAutomatization.save()
-        res.json(newAutomatization)
-        emails.map(async (email) => {
+        emails?.map(async (email) => {
             if (Number(email.number) === 0) {
                 let subscribers = []
                 if (startType === 'Formulario completado') {
