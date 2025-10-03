@@ -71,7 +71,7 @@ export const getMessage = async (req, res) => {
                         const type = await openai.responses.parse({
                             model: "gpt-4o-mini",
                             input: [
-                                {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte.*Si tiene la intención de hablar con alguien diferenciar bien si es que quiere una reunion por zoom o física que serian los agendamientos, o lo que busca es chatear con alguien de soporte, nunca agregar ambos."},
+                                {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. *Si tiene la intención de hablar con alguien diferenciar bien si es que quiere una reunion por zoom o física que serian los agendamientos, o lo que busca es chatear con alguien de soporte, nunca agregar ambos."},
                                 ...conversation,
                                 {"role": "user", "content": message}
                             ],
@@ -91,7 +91,7 @@ export const getMessage = async (req, res) => {
                             const productsFilter = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories)}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
+                                    {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories).replaceAll('"', '')}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -126,13 +126,13 @@ export const getMessage = async (req, res) => {
                             const nameDescriptions = services.map(service => {
                                 return {
                                     name: service.name,
-                                    category: service.description.slice(0, 50)
+                                    category: service.description.slice(0, 30)
                                 }
                             })
                             const servicesFilter = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
+                                    {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions).replaceAll('"', '')}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -151,39 +151,49 @@ export const getMessage = async (req, res) => {
                                     typeService: service.typeService,
                                     typePrice: service.typePrice,
                                     typePay: service.typePay,
-                                    plans: service.plans
+                                    plans: service.plans?.plans?.map(p => ({
+                                        name: p.name,
+                                        description: p.description,
+                                        price: p.price,
+                                        anualPrice: p.anualPrice,
+                                        characteristics: p.characteristics,
+                                        functionalities: p.functionalities?.map(f => ({
+                                            name: f.name,
+                                            value: f.value
+                                        }))
+                                    }))
                                 }
                             })
-                            information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices)}.` : ''}`
+                            information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts).replaceAll('"', '')}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices).replaceAll('"', '')}.` : ''}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                             const politics = await Politics.find().lean()
-                            information = `${information}. ${JSON.stringify(politics[0].shipping)}`
+                            information = `${information}. ${JSON.stringify(politics[0].shipping).replaceAll('"', '')}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
                             const storeData = await StoreData.find().lean()
-                            information = `${information}. ${JSON.stringify(storeData[0])}`
+                            information = `${information}. ${JSON.stringify(storeData[0]).replaceAll('"', '')}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
                             const politics = await Politics.find().lean()
-                            information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
+                            information = `${information}. ${JSON.stringify(politics[0].devolutions).replaceAll('"', '')}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
                             const politics = await Politics.find().lean()
-                            information = `${information}. ${JSON.stringify(politics[0].pay)}`
+                            information = `${information}. ${JSON.stringify(politics[0].pay).replaceAll('"', '')}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                             const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
                             const nameDescriptions = calls.map(call => {
                                 return {
                                     nameMeeting: call.nameMeeting,
-                                    description: call.description.slice(0, 50)
+                                    description: call.description.slice(0, 30)
                                 }
                             })
                             const callsFilter = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
+                                    {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions).replaceAll('"', '')}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -203,7 +213,7 @@ export const getMessage = async (req, res) => {
                                     description: call.description.slice(0, 100)
                                 }
                             })
-                            information = `${information}. ${simplifiedCalls.length ? `${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting.` : ''}`
+                            information = `${information}. ${simplifiedCalls.length ? `${JSON.stringify(simplifiedCalls).replaceAll('"', '')}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting.` : ''}`
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                             let cart
@@ -238,7 +248,7 @@ export const getMessage = async (req, res) => {
                                 input: [
                                     {"role": "system", "content": `Tienes que actualizar el carrito del usuario y generar un mensaje de atención al cliente. 
         
-    Carrito actual: ${JSON.stringify(cartMinimal)}.  
+    Carrito actual: ${JSON.stringify(cartMinimal).replaceAll('"', '')}.  
     Información de productos: ${information}.  
 
     Devuelve 2 cosas en JSON:
@@ -441,7 +451,7 @@ export const getMessage = async (req, res) => {
                             const type = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
+                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. *Si tiene la intención de hablar con alguien diferenciar bien si es que quiere una reunion por zoom o física que serian los agendamientos, o lo que busca es chatear con alguien de soporte, nunca agregar ambos."},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -461,7 +471,7 @@ export const getMessage = async (req, res) => {
                                 const productsFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories)}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
+                                        {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories).replaceAll('"', '')}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -496,13 +506,13 @@ export const getMessage = async (req, res) => {
                                 const nameDescriptions = services.map(service => {
                                     return {
                                         name: service.name,
-                                        category: service.description.slice(0, 50)
+                                        category: service.description.slice(0, 30)
                                     }
                                 })
                                 const servicesFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
+                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions).replaceAll('"', '')}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -521,39 +531,49 @@ export const getMessage = async (req, res) => {
                                         typeService: service.typeService,
                                         typePrice: service.typePrice,
                                         typePay: service.typePay,
-                                        plans: service.plans
+                                        plans: service.plans?.plans?.map(p => ({
+                                            name: p.name,
+                                            description: p.description,
+                                            price: p.price,
+                                            anualPrice: p.anualPrice,
+                                            characteristics: p.characteristics,
+                                            functionalities: p.functionalities?.map(f => ({
+                                                name: f.name,
+                                                value: f.value
+                                            }))
+                                        }))
                                     }
                                 })
-                                information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices)}.` : ''}`
+                                information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts).replaceAll('"', '')}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices).replaceAll('"', '')}.` : ''}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                                 const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].shipping)}`
+                                information = `${information}. ${JSON.stringify(politics[0].shipping).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
                                 const storeData = await StoreData.find().lean()
-                                information = `${information}. ${JSON.stringify(storeData[0])}`
+                                information = `${information}. ${JSON.stringify(storeData[0]).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
                                 const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
+                                information = `${information}. ${JSON.stringify(politics[0].devolutions).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
                                 const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].pay)}`
+                                information = `${information}. ${JSON.stringify(politics[0].pay).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
                                 const nameDescriptions = calls.map(call => {
                                     return {
                                         nameMeeting: call.nameMeeting,
-                                        description: call.description.slice(0, 50)
+                                        description: call.description.slice(0, 30)
                                     }
                                 })
                                 const callsFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
+                                        {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions).replaceAll('"', '')}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -573,7 +593,7 @@ export const getMessage = async (req, res) => {
                                         description: call.description.slice(0, 100)
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
+                                information = `${information}. ${JSON.stringify(simplifiedCalls).replaceAll('"', '')}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                                 let cart
@@ -608,7 +628,7 @@ export const getMessage = async (req, res) => {
                                     input: [
                                         {"role": "system", "content": `Tienes que actualizar el carrito del usuario y generar un mensaje de atención al cliente. 
             
-        Carrito actual: ${JSON.stringify(cartMinimal)}.  
+        Carrito actual: ${JSON.stringify(cartMinimal).replaceAll('"', '')}.  
         Información de productos: ${information}.  
 
         Devuelve 2 cosas en JSON:
@@ -808,7 +828,7 @@ export const getMessage = async (req, res) => {
                             const type = await openai.responses.parse({
                                 model: "gpt-4o-mini",
                                 input: [
-                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. Nota: *Si la intecion es servicios tambien incluir agendamientos."},
+                                    {"role": "system", "content": "Analiza el historial de conversación y el último mensaje del usuario. Devuelve las intenciones detectadas, intenciones: saludo, productos, envíos, horarios, ubicación, garantía, devoluciones, métodos de pago, servicios, agendamientos, intención de compra de productos, necesidad de alguien de soporte. *Si tiene la intención de hablar con alguien diferenciar bien si es que quiere una reunion por zoom o física que serian los agendamientos, o lo que busca es chatear con alguien de soporte, nunca agregar ambos."},
                                     ...conversation,
                                     {"role": "user", "content": message}
                                 ],
@@ -828,7 +848,7 @@ export const getMessage = async (req, res) => {
                                 const productsFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories)}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
+                                        {"role": "system", "content": `El usuario busca productos. Aquí tienes el catálogo resumido: ${JSON.stringify(nameCategories).replaceAll('"', '')}. Devuelve los name de maximo 3 productos que podrían encajar mejor con la intención del usuario`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -863,13 +883,13 @@ export const getMessage = async (req, res) => {
                                 const nameDescriptions = services.map(service => {
                                     return {
                                         name: service.name,
-                                        category: service.description.slice(0, 50)
+                                        category: service.description.slice(0, 30)
                                     }
                                 })
                                 const servicesFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
+                                        {"role": "system", "content": `El usuario busca información sobre servicios que ofrecemos. Aquí tienes los servicios resumido: ${JSON.stringify(nameDescriptions).replaceAll('"', '')}. Devuelve los name de maximo 3 servicios que podrían encajar mejor segun el historial y el ultimo mensaje. *Unicamente en la respuesta pueden ir los name de los servicios, no puede ir ningun otro dato. *si en el historial de conversación se ha hablado de algun servicio agrega su name tambien.`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -888,39 +908,49 @@ export const getMessage = async (req, res) => {
                                         typeService: service.typeService,
                                         typePrice: service.typePrice,
                                         typePay: service.typePay,
-                                        plans: service.plans
+                                        plans: service.plans?.plans?.map(p => ({
+                                            name: p.name,
+                                            description: p.description,
+                                            price: p.price,
+                                            anualPrice: p.anualPrice,
+                                            characteristics: p.characteristics,
+                                            functionalities: p.functionalities?.map(f => ({
+                                                name: f.name,
+                                                value: f.value
+                                            }))
+                                        }))
                                     }
                                 })
-                                information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts)}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices)}.` : ''}`
+                                information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts).replaceAll('"', '')}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices).replaceAll('"', '')}.` : ''}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
                                 const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].shipping)}`
+                                information = `${information}. ${JSON.stringify(politics[0].shipping).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('horarios') || JSON.stringify(type.output_parsed).toLowerCase().includes('ubicación') || JSON.stringify(type.output_parsed).toLowerCase().includes('saludo')) {
                                 const storeData = await StoreData.find().lean()
-                                information = `${information}. ${JSON.stringify(storeData[0])}`
+                                information = `${information}. ${JSON.stringify(storeData[0]).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('garantia') || JSON.stringify(type.output_parsed).toLowerCase().includes('devoluciones')) {
                                 const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].devolutions)}`
+                                information = `${information}. ${JSON.stringify(politics[0].devolutions).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('metodos de pago')) {
                                 const politics = await Politics.find().lean()
-                                information = `${information}. ${JSON.stringify(politics[0].pay)}`
+                                information = `${information}. ${JSON.stringify(politics[0].pay).replaceAll('"', '')}`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('agendamientos')) {
                                 const calls = await Call.find().select('-_id -labels -buttonText -tags -action -message').lean()
                                 const nameDescriptions = calls.map(call => {
                                     return {
                                         nameMeeting: call.nameMeeting,
-                                        description: call.description.slice(0, 50)
+                                        description: call.description.slice(0, 30)
                                     }
                                 })
                                 const callsFilter = await openai.responses.parse({
                                     model: "gpt-4o-mini",
                                     input: [
-                                        {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions)}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
+                                        {"role": "system", "content": `El usuario busca agendar. Aquí tienes los agendamientos resumido: ${JSON.stringify(nameDescriptions).replaceAll('"', '')}. Devuelve los nameMeeting de maximo 3 agendamientos que podrían encajar mejor con la intención del usuario`},
                                         ...conversation,
                                         {"role": "user", "content": message}
                                     ],
@@ -940,7 +970,7 @@ export const getMessage = async (req, res) => {
                                         description: call.description.slice(0, 100)
                                     }
                                 })
-                                information = `${information}. ${JSON.stringify(simplifiedCalls)}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
+                                information = `${information}. ${JSON.stringify(simplifiedCalls).replaceAll('"', '')}. Si el usuario quiere agendar una llamada identifica la llamada más adecuada y pon su link de esta forma: ${process.env.WEB_URL}/llamadas/Nombre%20de%20la%20llamada utilizando el call.nameMeeting`
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('intención de compra de productos')) {
                                 let cart
@@ -975,7 +1005,7 @@ export const getMessage = async (req, res) => {
                                     input: [
                                         {"role": "system", "content": `Tienes que actualizar el carrito del usuario y generar un mensaje de atención al cliente. 
             
-        Carrito actual: ${JSON.stringify(cartMinimal)}.  
+        Carrito actual: ${JSON.stringify(cartMinimal).replaceAll('"', '')}.  
         Información de productos: ${information}.  
 
         Devuelve 2 cosas en JSON:
