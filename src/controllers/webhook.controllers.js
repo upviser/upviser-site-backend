@@ -34,7 +34,7 @@ export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
-        console.log(req.body)
+        console.log(req.body.entry[0]?.changes)
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
