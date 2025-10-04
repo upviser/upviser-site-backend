@@ -1241,6 +1241,7 @@ export const getMessage = async (req, res) => {
             }
         }
     } catch (error) {
+        console.log(error)
         if (error.response.data) {
             console.log(error.response.data)
         }
