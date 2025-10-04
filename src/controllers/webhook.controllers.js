@@ -1211,6 +1211,7 @@ export const getMessage = async (req, res) => {
                         presence_penalty: 0,
                         store: false
                     });
+                    console.log(response.choices[0].message.content)
                     await axios.post(`https://graph.instagram.com/v23.0/${id}/replies`, {
                         "message": response.choices[0].message.content
                     }, {
@@ -1251,6 +1252,7 @@ export const getMessage = async (req, res) => {
             }
         }
     } catch (error) {
+        console.log(error)
         return res.status(500).json({message: error.message})
     }
 }
