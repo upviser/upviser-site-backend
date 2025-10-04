@@ -35,10 +35,10 @@ export const editAccountData = async (req, res) => {
         if (req.body.password) {
             if (req.body.password.length < 6) return res.send({ message: 'La contraseña tiene que tener minimo 6 caracteres' })
             const hashedPassword = await bcrypt.hash(req.body.password, 12)
-            const editAccountData = await ShopLogin.findByIdAndUpdate(req.body._id, { name: req.body.name, email: req.body.email, password: hashedPassword }, { new: true })
+            const editAccountData = await ShopLogin.findByIdAndUpdate(req.body._id, { ...req.body, password: hashedPassword }, { new: true })
             return res.send(editAccountData)
         } else {
-            const editAccountData = await ShopLogin.findByIdAndUpdate(req.body._id, { name: req.body.name, email: req.body.email }, { new: true })
+            const editAccountData = await ShopLogin.findByIdAndUpdate(req.body._id,req.body, { new: true })
             return res.send(editAccountData)
         }
     } catch (error) {
