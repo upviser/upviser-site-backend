@@ -34,7 +34,6 @@ export const createWebhook = async (req, res) => {
 export const getMessage = async (req, res) => {
     try {
         console.log('Webhook recibido')
-        res.sendStatus(200)
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
@@ -54,7 +53,7 @@ export const getMessage = async (req, res) => {
                         const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
                         await notification.save()
                         io.emit('newNotification')
-                        return
+                        return res.sendStatus(200)
                     } else {
                         const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                         let products
@@ -319,8 +318,8 @@ export const getMessage = async (req, res) => {
                                 }
                             })
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
-                            const newMessageSave = await newMessage.save()
-                            return
+                            await newMessage.save()
+                            return res.sendStatus(200)
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                             const response = await openai.chat.completions.create({
@@ -355,7 +354,7 @@ export const getMessage = async (req, res) => {
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
                             await notification.save()
                             io.emit('newNotification')
-                            return
+                            return res.sendStatus(200)
                         }
                         if (information.length > 20) {
                             const response = await openai.chat.completions.create({
@@ -386,7 +385,7 @@ export const getMessage = async (req, res) => {
                             }).catch((error) => console.log(error))
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                             await newMessage.save()
-                            return
+                            return res.sendStatus(200)
                         } else {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
@@ -401,7 +400,7 @@ export const getMessage = async (req, res) => {
                             })
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Agente IA'})
                             await newMessage.save()
-                            return
+                            return res.sendStatus(200)
                         }
                     }
                 }
@@ -409,7 +408,7 @@ export const getMessage = async (req, res) => {
                 const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
-                    return
+                    return res.sendStatus(200)
                 }
             }
         } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
@@ -429,7 +428,7 @@ export const getMessage = async (req, res) => {
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
                             await notification.save()
                             io.emit('newNotification')
-                            return
+                            return res.sendStatus(200)
                         } else {
                             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -697,8 +696,8 @@ export const getMessage = async (req, res) => {
                                     }
                                 })
                                 const newMessage = new MessengerMessage({messengerId: sender, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
-                                const newMessageSave = await newMessage.save()
-                                return
+                                await newMessage.save()
+                                return res.sendStatus(200)
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                                 const response = await openai.chat.completions.create({
@@ -735,7 +734,7 @@ export const getMessage = async (req, res) => {
                                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
                                 await notification.save()
                                 io.emit('newNotification')
-                                return
+                                return res.sendStatus(200)
                             }
                             if (information.length > 20) {
                                 const response = await openai.chat.completions.create({
@@ -768,7 +767,7 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new MessengerMessage({messengerId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
-                                return
+                                return res.sendStatus(200)
                             } else {
                                 await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                     "recipient": {
@@ -785,7 +784,7 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Transferido'})
                                 await newMessage.save()
-                                return
+                                return res.sendStatus(200)
                             }
                         }
                     }
@@ -804,7 +803,7 @@ export const getMessage = async (req, res) => {
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
                             await notification.save()
                             io.emit('newNotification')
-                            return
+                            return res.sendStatus(200)
                         } else {
                             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -1072,8 +1071,8 @@ export const getMessage = async (req, res) => {
                                     }
                                 })
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
-                                const newMessageSave = await newMessage.save()
-                                return
+                                await newMessage.save()
+                                return res.sendStatus(200)
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                                 const response = await openai.chat.completions.create({
@@ -1110,7 +1109,7 @@ export const getMessage = async (req, res) => {
                                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
                                 await notification.save()
                                 io.emit('newNotification')
-                                return
+                                return res.sendStatus(200)
                             }
                             if (information.length > 20) {
                                 const response = await openai.chat.completions.create({
@@ -1143,7 +1142,7 @@ export const getMessage = async (req, res) => {
                                 }).catch((error) => console.log(error.response.data))
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
-                                return
+                                return res.sendStatus(200)
                             } else {
                                 await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
@@ -1160,7 +1159,7 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
-                                return
+                                return res.sendStatus(200)
                             }
                         }
                     }
@@ -1174,7 +1173,7 @@ export const getMessage = async (req, res) => {
                 }).lean();
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
-                    return
+                    return res.sendStatus(200)
                 }
             }
         } else if (req.body?.entry && req.body.entry[0]?.changes[0]?.value?.text) {
@@ -1224,7 +1223,7 @@ export const getMessage = async (req, res) => {
                             'Content-Type': 'application/json'
                         }
                     })
-                    return
+                    return res.sendStatus(200)
                 }
             } else {
                 const user = await User.findOne({
@@ -1235,18 +1234,12 @@ export const getMessage = async (req, res) => {
                 }).lean();
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
-                    return
-                } else {
-                    return
+                    return res.sendStatus(200)
                 }
             }
         }
     } catch (error) {
-        console.log(error)
-        if (error.response.data) {
-            console.log(error.response.data)
-        }
-        return
+        return res.status(500).json({message: error.message})
     }
 }
 
