@@ -1179,7 +1179,7 @@ export const getMessage = async (req, res) => {
             }
         } else if (req.body?.entry && req.body.entry[0]?.changes[0]?.value?.text) {
             if (req.body.entry[0].id === integration.idInstagram) {
-                if (req.body.entry[0]?.changes[0].field !== 'comments') return
+                if (req.body.entry[0].changes[0].value.from.id === integration.idInstagram) return
                 const sender = req.body.entry[0].changes[0].value.from?.id
                 const comment = req.body.entry[0].changes[0].value.text
                 const idComment = req.body.entry[0].changes[0].value.id
