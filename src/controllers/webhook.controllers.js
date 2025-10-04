@@ -33,6 +33,7 @@ export const createWebhook = async (req, res) => {
 
 export const getMessage = async (req, res) => {
     try {
+        res.sendStatus(200)
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
@@ -52,7 +53,7 @@ export const getMessage = async (req, res) => {
                         const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
                         await notification.save()
                         io.emit('newNotification')
-                        return res.sendStatus(200)
+                        return
                     } else {
                         const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                         let products
@@ -318,7 +319,7 @@ export const getMessage = async (req, res) => {
                             })
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                             const newMessageSave = await newMessage.save()
-                            return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
+                            return
                         }
                         if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                             const response = await openai.chat.completions.create({
@@ -353,7 +354,7 @@ export const getMessage = async (req, res) => {
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Whatsapp', url: '/mensajes', view: false })
                             await notification.save()
                             io.emit('newNotification')
-                            return res.sendStatus(200)
+                            return
                         }
                         if (information.length > 20) {
                             const response = await openai.chat.completions.create({
@@ -384,7 +385,7 @@ export const getMessage = async (req, res) => {
                             }).catch((error) => console.log(error))
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                             await newMessage.save()
-                            return res.send(newMessage)
+                            return
                         } else {
                             await axios.post(`https://graph.facebook.com/v22.0/${integration.idPhone}/messages`, {
                                 "messaging_product": "whatsapp",
@@ -399,19 +400,15 @@ export const getMessage = async (req, res) => {
                             })
                             const newMessage = new WhatsappMessage({phone: number, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Agente IA'})
                             await newMessage.save()
-                            return res.send(newMessage)
+                            return
                         }
                     }
-                } else {
-                    return res.json({ message: 'Error: No existe el token de la app para Whatsapp' })
                 }
             } else {
                 const user = await User.findOne({ idPhone: req.body.entry[0].changes[0].value.metadata.phone_number_id }).lean()
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
-                    return res.json({ success: 'OK' })
-                } else {
-                    return res.json({ message: 'Error: No existe cliente con este id.' })
+                    return
                 }
             }
         } else if (req.body?.entry && req.body.entry[0]?.messaging && req.body.entry[0].messaging[0]?.message?.text) {
@@ -431,7 +428,7 @@ export const getMessage = async (req, res) => {
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
                             await notification.save()
                             io.emit('newNotification')
-                            return res.sendStatus(200)
+                            return
                         } else {
                             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -700,7 +697,7 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new MessengerMessage({messengerId: sender, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                                 const newMessageSave = await newMessage.save()
-                                return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
+                                return
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                                 const response = await openai.chat.completions.create({
@@ -737,7 +734,7 @@ export const getMessage = async (req, res) => {
                                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Messenger', url: '/mensajes', view: false })
                                 await notification.save()
                                 io.emit('newNotification')
-                                return res.send(newMessage)
+                                return
                             }
                             if (information.length > 20) {
                                 const response = await openai.chat.completions.create({
@@ -770,7 +767,7 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new MessengerMessage({messengerId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
-                                return res.send(newMessage)
+                                return
                             } else {
                                 await axios.post(`https://graph.facebook.com/v21.0/${integration.idPage}/messages?access_token=${integration.messengerToken}`, {
                                     "recipient": {
@@ -787,11 +784,9 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new MessengerMessage({messengerId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Transferido'})
                                 await newMessage.save()
-                                return res.send(newMessage)
+                                return
                             }
                         }
-                    } else {
-                        return res.json({ message: 'Error: No existe el token de la app para Messenger' })
                     }
                 } else if (req.body.entry[0].messaging[0].recipient.id === integration.idInstagram) {
                     const message = req.body.entry[0].messaging[0].message.text
@@ -808,7 +803,7 @@ export const getMessage = async (req, res) => {
                             const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
                             await notification.save()
                             io.emit('newNotification')
-                            return res.sendStatus(200)
+                            return
                         } else {
                             await ShopLogin.findByIdAndUpdate(shopLogin._id, { conversationsAI: shopLogin.conversationsAI - 1 })
                             const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -1077,7 +1072,7 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: act.output_parsed.message, agent: false, view: false, tag: 'Productos'})
                                 const newMessageSave = await newMessage.save()
-                                return res.send({ ...newMessageSave.toObject(), cart: enrichedCart, ready: false })
+                                return
                             }
                             if (JSON.stringify(type.output_parsed).toLowerCase().includes('soporte')) {
                                 const response = await openai.chat.completions.create({
@@ -1114,7 +1109,7 @@ export const getMessage = async (req, res) => {
                                 const notification = new Notification({ title: 'Nuevo mensaje', description: 'Nuevo mensaje de Instagram', url: '/mensajes', view: false })
                                 await notification.save()
                                 io.emit('newNotification')
-                                return res.send(newMessage)
+                                return
                             }
                             if (information.length > 20) {
                                 const response = await openai.chat.completions.create({
@@ -1147,7 +1142,7 @@ export const getMessage = async (req, res) => {
                                 }).catch((error) => console.log(error.response.data))
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: response.choices[0].message.content, agent: false, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
-                                return res.send(newMessage)
+                                return
                             } else {
                                 await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                                     "recipient": {
@@ -1164,11 +1159,9 @@ export const getMessage = async (req, res) => {
                                 })
                                 const newMessage = new InstagramMessage({instagramId: sender, message: message, response: 'Lo siento, no tengo la información necesaria para responder tu pregunta, te estoy transfiriendo con alguien de soporte', agent: true, view: false, tag: 'Agente IA'})
                                 await newMessage.save()
-                                return res.send(newMessage)
+                                return
                             }
                         }
-                    } else {
-                        return res.json({ message: 'Error: No existe el token de la app para Messenger' })
                     }
                 }
             } else {
@@ -1180,17 +1173,14 @@ export const getMessage = async (req, res) => {
                 }).lean();
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
-                    return res.json({ success: 'OK' })
-                } else {
-                    return res.json({ message: 'Error: No existe cliente con este id.' })
+                    return
                 }
             }
         } else if (req.body?.entry && req.body.entry[0]?.changes[0]?.value?.text) {
             if (req.body.entry[0].id === integration.idInstagram) {
                 const sender = req.body.entry[0].changes[0].value.from?.id
                 const comment = req.body.entry[0].changes[0].value.text
-                console.log(comment)
-                const id = req.body.entry[0].changes[0].value.id
+                const idComment = req.body.entry[0].changes[0].value.id
                 const automatizations = await Automatization.find().lean()
                 const commentAutomatization = automatizations.find(automatization => comment.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(automatization.text?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
                 if (commentAutomatization) {
@@ -1210,7 +1200,7 @@ export const getMessage = async (req, res) => {
                         store: false
                     });
                     console.log(response.choices[0].message.content)
-                    await axios.post(`https://graph.instagram.com/v23.0/${id}/replies`, {
+                    await axios.post(`https://graph.instagram.com/v23.0/${idComment}/replies`, {
                         "message": response.choices[0].message.content
                     }, {
                         headers: {
@@ -1233,7 +1223,7 @@ export const getMessage = async (req, res) => {
                     })
                     const newMessage = new InstagramMessage({instagramId: sender, message: message, response: commentAutomatization.message, agent: false, view: false, tag: 'Agente IA'})
                     await newMessage.save()
-                    return res.send(newMessage)
+                    return
                 }
             } else {
                 const user = await User.findOne({
@@ -1244,15 +1234,15 @@ export const getMessage = async (req, res) => {
                 }).lean();
                 if (user) {
                     await axios.post(`${user.api}/webhook`, req.body)
-                    return res.json({ success: 'OK' })
+                    return
                 } else {
-                    return res.json({ message: 'Error: No existe cliente con este id.' })
+                    return
                 }
             }
         }
     } catch (error) {
         console.log(error.response.data)
-        return res.send({ status: 'OK' })
+        return
     }
 }
 
