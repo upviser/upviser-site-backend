@@ -1211,7 +1211,7 @@ export const getMessage = async (req, res) => {
                     })
                     await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                         "recipient": {
-                            "id": sender
+                            "comment_id": idComment
                         },
                         "message": {
                             "text": commentAutomatization.message
