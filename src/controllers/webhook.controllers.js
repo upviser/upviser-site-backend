@@ -1180,6 +1180,7 @@ export const getMessage = async (req, res) => {
             if (req.body.entry[0].id === integration.idInstagram) {
                 const sender = req.body.entry[0].changes[0].value.from?.id
                 const comment = req.body.entry[0].changes[0].value.text
+                console.log(comment)
                 const idComment = req.body.entry[0].changes[0].value.id
                 const automatizations = await Automatization.find().lean()
                 const commentAutomatization = automatizations.find(automatization => comment.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(automatization.text?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
