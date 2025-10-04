@@ -1,5 +1,5 @@
 import {Router} from 'express'
-import { createAccount, editAccountData, getAccountData, getAccounts, getAccountAdmin, editAccountAdmin } from '../controllers/shopLogin.controllers.js'
+import { createAccount, editAccountData, getAccountData, getAccounts, getAccountAdmin, editAccountAdmin, deleteAccount } from '../controllers/shopLogin.controllers.js'
 
 const router = Router()
 
@@ -14,5 +14,7 @@ router.get('/accounts', getAccounts)
 router.get('/shop-login-admin', getAccountAdmin)
 
 router.put('/shop-login-admin', editAccountAdmin)
+
+router.delete('/shop-login/:id', deleteAccount)
 
 export default router

@@ -72,3 +72,12 @@ export const editAccountAdmin = async (req, res) => {
         return res.status(500).json({message: error.message})
     }
 }
+
+export const deleteAccount = async (req, res) => {
+    try {
+        await ShopLogin.findByIdAndRemove(req.params.id)
+        return res.send({ success: 'OK' })
+    } catch (error) {
+        return res.status(500).json({message: error.message})
+    }
+}
