@@ -1191,7 +1191,9 @@ export const getMessage = async (req, res) => {
                 const comment = req.body.entry[0].changes[0].value.text
                 const id = req.body.entry[0].id
                 const automatizations = await Automatization.find().lean()
-                const commentAutomatization = automatizations.find(automatization => comment.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(automatization.text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
+                console.log(automatizations)
+                const commentAutomatization = automatizations.find(automatization => comment.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(automatization.text?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
+                console.log(commentAutomatization)
                 if (commentAutomatization) {
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     const response = await openai.chat.completions.create({
