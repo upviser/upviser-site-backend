@@ -1213,7 +1213,7 @@ export const getMessage = async (req, res) => {
                             'Content-Type': 'application/json'
                         }
                     })
-                    const newMessage = new InstagramMessage({instagramId: sender, message: message, response: commentAutomatization.message, agent: false, view: false, tag: 'Agente IA'})
+                    const newMessage = new InstagramMessage({instagramId: sender, response: commentAutomatization.message, agent: false, view: false, tag: 'Agente IA'})
                     await newMessage.save()
                     await axios.post(`https://graph.instagram.com/v23.0/${idComment}/replies`, {
                         "message": response.choices[0].message.content
