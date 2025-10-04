@@ -1185,13 +1185,17 @@ export const getMessage = async (req, res) => {
                 }
             }
         } else if (req.body?.entry && req.body.entry[0]?.value?.text) {
+            console.log(req.body.entry[0].value.text)
             if (req.body.entry[0].id === integration.idInstagram) {
                 const sender = req.body.entry[0].value.from?.id
+                console.log(sender)
                 const comment = req.body.entry[0].value.text
                 const id = req.body.entry[0].value.id
                 const comments = await Comment.find().lean()
+                console.log(comments)
                 const commentAutomatization = comments.find(com => comment.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(com.text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
                 if (commentAutomatization) {
+                    console.log(commentAutomatization)
                     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
                     const response = await openai.chat.completions.create({
                         model: "gpt-4o-mini",
