@@ -1200,14 +1200,6 @@ export const getMessage = async (req, res) => {
                         presence_penalty: 0,
                         store: false
                     });
-                    await axios.post(`https://graph.instagram.com/v23.0/${idComment}/replies`, {
-                        "message": response.choices[0].message.content
-                    }, {
-                        headers: {
-                            'Authorization': `Bearer ${integration.instagramToken}`,
-                            'Content-Type': 'application/json'
-                        }
-                    })
                     await axios.post(`https://graph.instagram.com/v23.0/${integration.idInstagram}/messages`, {
                         "recipient": {
                             "comment_id": idComment
@@ -1223,6 +1215,14 @@ export const getMessage = async (req, res) => {
                     })
                     const newMessage = new InstagramMessage({instagramId: sender, message: message, response: commentAutomatization.message, agent: false, view: false, tag: 'Agente IA'})
                     await newMessage.save()
+                    await axios.post(`https://graph.instagram.com/v23.0/${idComment}/replies`, {
+                        "message": response.choices[0].message.content
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${integration.instagramToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    })
                     return
                 }
             } else {
@@ -1241,6 +1241,9 @@ export const getMessage = async (req, res) => {
             }
         }
     } catch (error) {
+        if (error.response.data) {
+            console.log(error.response.data)
+        }
         return
     }
 }
