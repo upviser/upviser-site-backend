@@ -1214,6 +1214,7 @@ export const getMessage = async (req, res) => {
                         "message": response.choices[0].message.content
                     }, {
                         headers: {
+                            'Authorization': `Bearer ${integration.instagramToken}`,
                             'Content-Type': 'application/json'
                         }
                     })
