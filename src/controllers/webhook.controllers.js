@@ -1252,7 +1252,7 @@ export const getMessage = async (req, res) => {
         }
     } catch (error) {
         console.log(error.response.data)
-        return res.status(500).json({message: error.message})
+        return res.status(200)
     }
 }
 
