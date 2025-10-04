@@ -34,8 +34,6 @@ export const getMessage = async (req, res) => {
     try {
         const integration = await Integration.findOne().lean()
         const shopLogin = await ShopLogin.findOne({ type: 'Administrador' })
-        console.log(req.body.entry[0])
-        console.log(req.body.entry[0]?.changes)
         if (req.body?.entry && req.body.entry[0]?.changes && req.body.entry[0].changes[0]?.value?.messages && 
             req.body.entry[0].changes[0].value.messages[0]?.text && req.body.entry[0].changes[0].value.messages[0].text.body) {
             if (req.body.entry[0].changes[0].value.metadata.phone_number_id === integration.idPhone) {
@@ -1190,7 +1188,7 @@ export const getMessage = async (req, res) => {
             if (req.body.entry[0].id === integration.idInstagram) {
                 const sender = req.body.entry[0].changes[0].value.from?.id
                 const comment = req.body.entry[0].changes[0].value.text
-                const id = req.body.entry[0].changes[0].value.id
+                const id = req.body.entry[0].id
                 const comments = await Comment.find().lean()
                 const commentAutomatization = comments.find(com => comment.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(com.text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
                 if (commentAutomatization) {
