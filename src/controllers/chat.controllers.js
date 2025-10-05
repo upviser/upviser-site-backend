@@ -142,6 +142,8 @@ export const responseMessage = async (req, res) => {
                         }))
                     }
                 })
+                console.log(simplifiedProducts)
+                console.log(simplifiedServices)
                 information = `${information}. ${simplifiedProducts.length ? `Información de productos: ${JSON.stringify(simplifiedProducts).replaceAll('"', '')}. Si el usuario esta buscando un producto o le quieres recomendar un producto pon ${process.env.WEB_URL}/tienda/(slug de la categoria)/(slug del producto) para que pueda ver fotos y más detalles del producto, y siempre muestra todas las variantes del producto.` : ''} ${simplifiedServices.length ? `Información de servicios: ${JSON.stringify(simplifiedServices).replaceAll('"', '')}. Si el usuario esta interesado en el servicio decir como seria el primer paso que esta en firstStep.type y mostrar el link de la página ${process.env.WEB_URL}/(firstStep.slug).` : ''}`
             }
             if (JSON.stringify(type.output_parsed).toLowerCase().includes('envios')) {
