@@ -124,7 +124,6 @@ export const responseMessage = async (req, res) => {
                     return {
                         name: service.name,
                         description: service.description.slice(0, 100),
-                        steps: service.steps,
                         typeService: service.typeService,
                         typePrice: service.typePrice,
                         typePay: service.typePay,
