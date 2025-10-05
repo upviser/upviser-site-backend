@@ -20,6 +20,7 @@ const ServiceSchema = new mongoose.Schema({
     typePay: { type: String},
     price: { type: Number }, 
     anualPrice: { type: Number },
+    firstStep: { type: { type: String }, slug: { type: String } },
     plans: { functionalities: [{ type: String }], plans: [{ name: { type: String }, description: { type: String }, price: { type: Number }, anualPrice: { type: Number }, characteristics: [{ type: String }], functionalities: [{ name: { type: String }, value: { type: String } }] }] },
     tags: [{ type: String }]
 }, {
