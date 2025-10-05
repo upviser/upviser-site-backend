@@ -129,7 +129,7 @@ export const responseMessage = async (req, res) => {
                         typePrice: service.typePrice,
                         typePay: service.typePay,
                         firstStep: service.firstStep,
-                        plans: service.plans?.plans?.map(p => ({
+                        plans: service.plans?.plans?.length && service.plans?.plans[0].name &&service.plans?.plans[0].name !== '' && service.plans?.plans?.map(p => ({
                             name: p.name,
                             description: p.description.slice(0, 100),
                             price: p.price,
