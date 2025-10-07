@@ -68,7 +68,7 @@ export const zoomCallback = async (req, res) => {
         await Integrations.findOneAndUpdate({ zoomAccountId: zoomAccountId, zoomToken: access_token, zoomRefreshToken: refresh_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
     }
 
-    res.json({ success: 'OK' });
+    return res.redirect(`${process.env.ADMIN_URL}/zoom-oauth-success?status=ok`)
   } catch (err) {
     console.error(err.response?.data || err);
     res.status(500).send(err);
