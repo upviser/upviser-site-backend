@@ -6,14 +6,13 @@ import qs from 'qs';
 export const createToken = async (req, res) => {
     try {
         const integrations = await Integrations.findOne().lean()
-        const response = await axios.post('https://zoom.us/oauth/token', null, {
+        const response = await axios.post('https://zoom.us/oauth/token', qs.stringify({
+          grant_type: 'refresh_token',
+          refresh_token: integrations.zoomRefreshToken
+        }), {
             headers: {
                 'Authorization': `Basic ${Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64')}`,
                 'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            params: {
-                "grant_type": "account_credentials",
-                "account_id": integrations.zoomAccountId
             }
         })
         await Integrations.findByIdAndUpdate(integrations._id, { zoomToken: response.data.access_token, zoomRefreshToken: response.data.refresh_token, zoomExpiresIn: response.data.expires_in, zoomCreateToken: new Date() })

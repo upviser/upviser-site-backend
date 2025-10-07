@@ -82,7 +82,7 @@ export const CreateMeeting = async (req, res) => {
             const meetingData = {
                 topic: req.body.call,
                 type: 2,
-                start_time: moment.tz(req.body.date, 'America/Santiago').format(),
+                start_time: req.body.date,
                 duration: req.body.duration
             }
             const meetingResponse = await axios.post(`https://api.zoom.us/v2/users/me/meetings`, meetingData, {
