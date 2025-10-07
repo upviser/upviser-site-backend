@@ -11,6 +11,7 @@ import Zoom from '../models/Zoom.js'
 import { isTokenExpired } from '../utils/zoom.js'
 import Integrations from '../models/Integrations.js'
 import Style from '../models/Style.js'
+import qs from 'qs'
 
 export const editCalendar = async (req, res) => {
     try {
