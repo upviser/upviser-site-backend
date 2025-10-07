@@ -82,7 +82,7 @@ export const CreateMeeting = async (req, res) => {
             const meetingData = {
                 topic: req.body.call,
                 type: 2,
-                start_time: req.body.date,
+                start_time: moment.tz(req.body.date, 'America/Santiago').format(),
                 duration: req.body.duration
             }
             const meetingResponse = await axios.post(`https://api.zoom.us/v2/users/me/meetings`, meetingData, {
@@ -151,7 +151,7 @@ export const CreateMeeting = async (req, res) => {
             const clientData = await ClientData.find()
             const storeData = await StoreData.find()
             const style = await Style.find()
-            await sendEmailBrevo({ subscribers: [{ name: req.body.firstName, email: req.body.email }], emailData: { affair: `¡Hola ${req.body.firstName}! Tu llamada ha sido agendada con exito`, title: 'Hemos agendado tu llamada exitosamente', paragraph: `¡Hola ${req.body.firstName}! Te queriamos informar que tu llamada con fecha ${new Date(req.body.date).getUTCDate()}/${new Date(req.body.date).getUTCMonth() + 1}/${new Date(req.body.date).getUTCFullYear()} a las ${new Date(req.body.date).getUTCHours()}:${new Date(req.body.date).getUTCMinutes() >= 9 ? new Date(req.body.date).getUTCMinutes() : `0${new Date(req.body.date).getUTCMinutes()}`} ha sido agendada con exito, aqui te dejamos el acceso a la llamada en el siguiente boton, para cualquier consulta comunicate con nostros a traves de nuestro Whatsapp +56${storeData[0].phone}.`, buttonText: 'Ingresar a la llamada', url: meetingResponse.data.start_url }, clientData: clientData, storeData: storeData[0], style: style[0] })
+            await sendEmailBrevo({ subscribers: [{ name: req.body.firstName, email: req.body.email }], emailData: { affair: `¡Hola ${req.body.firstName}! Tu llamada ha sido agendada con exito`, title: 'Hemos agendado tu llamada exitosamente', paragraph: `¡Hola ${req.body.firstName}! Te queriamos informar que tu llamada con fecha ${new Date(req.body.date).getDate()}/${new Date(req.body.date).getMonth() + 1}/${new Date(req.body.date).getFullYear()} a las ${new Date(req.body.date).getHours()}:${new Date(req.body.date).getMinutes() >= 9 ? new Date(req.body.date).getMinutes() : `0${new Date(req.body.date).getMinutes()}`} ha sido agendada con exito, aqui te dejamos el acceso a la llamada en el siguiente boton, para cualquier consulta comunicate con nostros a traves de nuestro Whatsapp +56${storeData[0].phone}.`, buttonText: 'Ingresar a la llamada', url: meetingResponse.data.start_url }, clientData: clientData, storeData: storeData[0], style: style[0] })
         } else {
             const integrations = await Integrations.findOne().lean()
             if (integrations && integrations.apiToken && integrations.apiToken !== '' && integrations.apiPixelId && integrations.apiPixelId !== '') {
