@@ -151,7 +151,7 @@ export const CreateMeeting = async (req, res) => {
             const clientData = await ClientData.find()
             const storeData = await StoreData.find()
             const style = await Style.find()
-            const date = moment.tz(req.body.date, 'America/Santiago').format()
+            const date = moment.tz(req.body.date, 'America/Santiago')
             await sendEmailBrevo({ subscribers: [{ name: req.body.firstName, email: req.body.email }], emailData: { affair: `¡Hola ${req.body.firstName}! Tu llamada ha sido agendada con exito`, title: 'Hemos agendado tu llamada exitosamente', paragraph: `¡Hola ${req.body.firstName}! Te queriamos informar que tu llamada con fecha ${new Date(req.body.date).getDate()}/${date.getMonth() + 1}/${date.getFullYear()} a las ${date.getHours()}:${date.getMinutes() >= 9 ? date.getMinutes() : `0${date.getMinutes()}`} ha sido agendada con exito, aqui te dejamos el acceso a la llamada en el siguiente boton, para cualquier consulta comunicate con nostros a traves de nuestro Whatsapp +56${storeData[0].phone}.`, buttonText: 'Ingresar a la llamada', url: meetingResponse.data.start_url }, clientData: clientData, storeData: storeData[0], style: style[0] })
         } else {
             const integrations = await Integrations.findOne().lean()
