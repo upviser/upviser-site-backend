@@ -61,10 +61,15 @@ export const zoomCallback = async (req, res) => {
 
     const { account_id: zoomAccountId } = userResp.data;
 
+    console.log(state)
+
     if (state) {
         const user = await User.findOne({ state: state })
-        if (user) await axios.post(`${user.api}/integrations`, { zoomAccountId: zoomAccountId, zoomToken: access_token, zoomRefreshToken: refresh_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
+        console.log(user)
+        if (user) {
+          await axios.post(`${user.api}/integrations`, { zoomAccountId: zoomAccountId, zoomToken: access_token, zoomRefreshToken: refresh_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
           return res.redirect(`${user.admin}/zoom-oauth-success?status=ok`)
+        }
     } else {
         await Integrations.findOneAndUpdate({ zoomAccountId: zoomAccountId, zoomToken: access_token, zoomRefreshToken: refresh_token, zoomExpiresIn: expires_in, zoomCreateToken: new Date() })
     }
